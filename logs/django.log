@@ -1,1 +1,148 @@
 INFO 2025-08-24 08:51:27,521 autoreload 6360 8736334016 Watching for file changes with StatReloader
+INFO 2025-08-24 09:17:09,373 autoreload 12663 8736334016 Watching for file changes with StatReloader
+WARNING 2025-08-24 09:17:15,851 log 12663 6138327040 Not Found: /
+WARNING 2025-08-24 09:22:01,243 log 12663 6138327040 Unauthorized: /api/auth/token/
+INFO 2025-08-24 09:25:12,184 autoreload 13958 8736334016 Watching for file changes with StatReloader
+WARNING 2025-08-24 09:26:17,196 log 12663 6138327040 Unauthorized: /api/auth/token/
+WARNING 2025-08-24 09:32:58,272 log 12663 6138327040 Unauthorized: /api/auth/token/
+INFO 2025-08-24 09:43:34,094 autoreload 15691 8736334016 Watching for file changes with StatReloader
+INFO 2025-08-24 09:43:50,112 autoreload 15726 8736334016 Watching for file changes with StatReloader
+INFO 2025-08-24 09:56:36,157 autoreload 16556 8736334016 Watching for file changes with StatReloader
+WARNING 2025-08-24 09:59:18,136 log 16556 6199898112 Forbidden: /api/models/
+WARNING 2025-08-24 10:07:47,786 log 16556 6199898112 Unauthorized: /api/auth/token/
+WARNING 2025-08-24 10:09:19,639 log 16556 6199898112 Unauthorized: /api/auth/token/
+WARNING 2025-08-24 10:09:19,650 log 16556 6199898112 Forbidden: /api/models/
+WARNING 2025-08-24 10:09:40,049 log 16556 6199898112 Unauthorized: /api/auth/token/
+INFO 2025-08-24 10:10:05,376 autoreload 16556 8736334016 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-24 10:10:05,776 autoreload 17446 8736334016 Watching for file changes with StatReloader
+WARNING 2025-08-24 10:14:46,344 log 17446 6341865472 Not Found: /
+WARNING 2025-08-24 10:14:47,956 log 17446 6341865472 Not Found: /
+WARNING 2025-08-24 10:14:50,232 log 17446 6341865472 Not Found: /auth/me
+WARNING 2025-08-24 10:14:50,233 log 17446 6358691840 Not Found: /static/caseforge-landing.html
+WARNING 2025-08-24 10:14:50,234 log 17446 6375518208 Not Found: /static/build-advisor-wireframe.html
+WARNING 2025-08-24 10:14:50,235 log 17446 6392344576 Not Found: /static/build-directory-console.html
+WARNING 2025-08-24 10:14:50,248 log 17446 6341865472 Not Found: /models
+WARNING 2025-08-24 10:14:50,251 log 17446 6358691840 Not Found: /portfolios
+WARNING 2025-08-24 10:14:50,252 log 17446 6375518208 Not Found: /process/roots
+WARNING 2025-08-24 10:14:50,252 log 17446 6392344576 Not Found: /process/roots
+WARNING 2025-08-24 12:00:54,917 log 17446 6341865472 Unauthorized: /api/auth/token/
+INFO 2025-08-25 15:54:21,637 autoreload 75607 8765808832 Watching for file changes with StatReloader
+WARNING 2025-08-25 15:55:17,026 log 75607 6168850432 Not Found: /
+WARNING 2025-08-25 15:55:17,061 log 75607 6168850432 Not Found: /favicon.ico
+WARNING 2025-08-25 15:55:20,159 log 75607 6168850432 Not Found: /
+WARNING 2025-08-25 15:55:23,945 log 75607 6168850432 Not Found: /
+WARNING 2025-08-25 15:55:26,707 log 75607 6185676800 Not Found: /static/admin/css/base.css
+WARNING 2025-08-25 15:55:26,710 log 75607 6168850432 Not Found: /static/admin/css/dark_mode.css
+WARNING 2025-08-25 15:55:26,710 log 75607 6202503168 Not Found: /static/admin/js/theme.js
+WARNING 2025-08-25 15:55:26,711 log 75607 6185676800 Not Found: /static/admin/css/login.css
+WARNING 2025-08-25 15:55:26,711 log 75607 6219329536 Not Found: /static/admin/css/nav_sidebar.css
+WARNING 2025-08-25 15:55:26,711 log 75607 6236155904 Not Found: /static/admin/js/nav_sidebar.js
+WARNING 2025-08-25 15:55:26,712 log 75607 6252982272 Not Found: /static/admin/css/onwell-theme.css
+WARNING 2025-08-25 15:55:26,713 log 75607 6168850432 Not Found: /static/admin/js/theme-switcher.js
+WARNING 2025-08-25 15:55:26,713 log 75607 6202503168 Not Found: /static/admin/css/responsive.css
+WARNING 2025-08-25 15:55:47,018 log 75607 6185676800 Forbidden (CSRF cookie not set.): /admin/login/
+WARNING 2025-08-25 15:57:11,113 log 75607 6168850432 Forbidden (CSRF cookie not set.): /admin/login/
+WARNING 2025-08-25 15:57:31,047 log 75607 6168850432 Not Found: /
+WARNING 2025-08-25 15:57:34,317 log 75607 6168850432 Not Found: /static/admin/css/base.css
+WARNING 2025-08-25 15:57:34,319 log 75607 6185676800 Not Found: /static/admin/css/dark_mode.css
+WARNING 2025-08-25 15:57:34,321 log 75607 6202503168 Not Found: /static/admin/js/theme.js
+WARNING 2025-08-25 15:57:34,322 log 75607 6168850432 Not Found: /static/admin/css/login.css
+WARNING 2025-08-25 15:57:34,323 log 75607 6219329536 Not Found: /static/admin/css/nav_sidebar.css
+WARNING 2025-08-25 15:57:34,325 log 75607 6236155904 Not Found: /static/admin/js/nav_sidebar.js
+WARNING 2025-08-25 15:57:34,325 log 75607 6252982272 Not Found: /static/admin/css/onwell-theme.css
+WARNING 2025-08-25 15:57:34,326 log 75607 6269808640 Not Found: /static/admin/js/theme-switcher.js
+WARNING 2025-08-25 15:57:34,327 log 75607 6286635008 Not Found: /static/admin/css/responsive.css
+WARNING 2025-08-25 15:58:57,710 log 75607 6303461376 Forbidden (CSRF cookie not set.): /admin/login/
+WARNING 2025-08-25 16:01:18,861 log 75607 6320287744 Not Found: /static/admin/css/base.css
+WARNING 2025-08-25 16:01:18,864 log 75607 6168850432 Not Found: /static/admin/css/dark_mode.css
+WARNING 2025-08-25 16:01:18,865 log 75607 6202503168 Not Found: /static/admin/css/nav_sidebar.css
+WARNING 2025-08-25 16:01:18,865 log 75607 6219329536 Not Found: /static/admin/js/nav_sidebar.js
+WARNING 2025-08-25 16:01:18,865 log 75607 6185676800 Not Found: /static/admin/js/theme.js
+WARNING 2025-08-25 16:01:18,865 log 75607 6320287744 Not Found: /static/admin/css/login.css
+WARNING 2025-08-25 16:01:18,865 log 75607 6236155904 Not Found: /static/admin/css/onwell-theme.css
+WARNING 2025-08-25 16:01:18,866 log 75607 6168850432 Not Found: /static/admin/js/theme-switcher.js
+WARNING 2025-08-25 16:01:18,866 log 75607 6219329536 Not Found: /static/admin/css/responsive.css
+WARNING 2025-08-25 16:01:28,804 log 75607 6202503168 Forbidden (CSRF cookie not set.): /admin/login/
+INFO 2025-08-25 16:02:02,135 autoreload 75607 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/caseforge/settings.py changed, reloading.
+INFO 2025-08-25 16:02:02,545 autoreload 77818 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 16:02:11,962 autoreload 77818 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/caseforge/settings.py changed, reloading.
+INFO 2025-08-25 16:02:12,368 autoreload 77899 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 16:02:37,222 autoreload 77899 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/caseforge/urls.py changed, reloading.
+INFO 2025-08-25 16:02:37,559 autoreload 78074 8765808832 Watching for file changes with StatReloader
+WARNING 2025-08-25 16:02:56,687 log 78074 6191411200 Forbidden (CSRF cookie not set.): /admin/login/
+WARNING 2025-08-25 16:03:04,566 log 78074 6191411200 Forbidden (CSRF cookie not set.): /admin/login/
+WARNING 2025-08-25 16:03:41,168 log 78074 6225063936 Not Found: /
+WARNING 2025-08-25 16:07:56,710 log 78074 6191411200 Not Found: /
+INFO 2025-08-25 16:08:26,515 autoreload 78074 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/caseforge/urls.py changed, reloading.
+INFO 2025-08-25 16:08:26,925 autoreload 79538 8765808832 Watching for file changes with StatReloader
+WARNING 2025-08-25 16:09:08,820 log 79538 6128611328 Unauthorized: /api/auth/token/
+INFO 2025-08-25 17:01:27,480 autoreload 79538 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-25 17:01:27,961 autoreload 95198 8765808832 Watching for file changes with StatReloader
+ERROR 2025-08-25 17:14:41,708 log 95198 6165852160 Internal Server Error: /api/usecases/1/generate_specification/
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py", line 247, in generate_specification
+    from .tasks import generate_usecase_specification_task
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/tasks.py", line 117, in <module>
+    def generate_embeddings_task(node_ids: List[int]):
+                                           ^^^^
+NameError: name 'List' is not defined. Did you mean: 'list'?
+ERROR 2025-08-25 17:20:17,297 log 95198 6165852160 Internal Server Error: /api/usecases/17/generate_specification/
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py", line 247, in generate_specification
+    from .tasks import generate_usecase_specification_task
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/tasks.py", line 117, in <module>
+    def generate_embeddings_task(node_ids: List[int]):
+                                           ^^^^
+NameError: name 'List' is not defined. Did you mean: 'list'?
+WARNING 2025-08-25 17:34:10,064 log 95198 6165852160 Forbidden: /api/nodes/roots/
+WARNING 2025-08-25 17:46:49,117 log 95198 6165852160 Not Found: /api/nodes/by-code/1.1.1.1/
+WARNING 2025-08-25 17:46:50,125 log 95198 6165852160 Not Found: /api/nodes/by-code/1.1.1.1/
+WARNING 2025-08-25 17:46:51,131 log 95198 6165852160 Not Found: /api/nodes/by-code/1.1.1.2/
+WARNING 2025-08-25 17:46:52,225 log 95198 6165852160 Not Found: /api/nodes/by-code/1.1.1.1/
+WARNING 2025-08-25 17:46:54,397 log 95198 13304360960 Not Found: /api/nodes/by-code/1.1.1.2/
+WARNING 2025-08-25 17:46:55,242 log 95198 6165852160 Not Found: /api/nodes/by-code/1.1.1.1/
+WARNING 2025-08-25 17:50:38,057 log 95198 6165852160 Not Found: /api/nodes/by-code/1.0/
+INFO 2025-08-25 17:51:38,275 autoreload 12001 8765808832 Watching for file changes with StatReloader
+WARNING 2025-08-25 17:52:00,060 log 95198 6165852160 Not Found: /api/nodes/by-code/1.0/
+WARNING 2025-08-25 18:02:26,129 log 95198 6165852160 Not Found: /api/nodes/by-code/1.1.1.1/
+INFO 2025-08-25 18:02:51,036 autoreload 14066 8765808832 Watching for file changes with StatReloader
+WARNING 2025-08-25 18:04:07,588 log 95198 6165852160 Not Found: /api/nodes/by-code/1.0/
+WARNING 2025-08-25 18:05:39,570 log 95198 6165852160 Not Found: /api/nodes/by-code/1.0/
+WARNING 2025-08-25 18:06:50,368 log 95198 6165852160 Not Found: /api/nodes/by-code/1.0/
+WARNING 2025-08-25 18:09:15,133 log 95198 6165852160 Not Found: /api/nodes/by-code/1.0/

@@ -57,10 +57,22 @@ def signup(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def token(request):
+    email = request.data.get('email')
     username = request.data.get('username')
     password = request.data.get('password')
     
-    user = authenticate(username=username, password=password)
+    # Try to authenticate with email first, then username
+    user = None
+    if email:
+        try:
+            user_obj = User.objects.get(email=email)
+            user = authenticate(username=user_obj.username, password=password)
+        except User.DoesNotExist:
+            pass
+    
+    if not user and username:
+        user = authenticate(username=username, password=password)
+    
     if not user:
         return Response({'error': 'Invalid credentials'}, status=401)
     
@@ -225,6 +237,23 @@ class NodeUsecaseCandidateViewSet(ModelViewSet):
         candidates = self.get_queryset().filter(node_id=node_id)
         serializer = self.get_serializer(candidates, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def generate_specification(self, request, pk=None):
+        """Generate detailed use case specification for a candidate"""
+        candidate = self.get_object()
+        
+        # Import here to avoid circular imports
+        from .tasks import generate_usecase_specification_task
+        
+        # Trigger async task
+        task_result = generate_usecase_specification_task.delay(request.user.id, candidate.id)
+        
+        return Response({
+            'success': True,
+            'message': 'Specification generation started',
+            'task_id': task_result.id
+        })
 
 
 class NodeBookmarkViewSet(ModelViewSet):

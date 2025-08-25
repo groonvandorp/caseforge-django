@@ -81,7 +81,8 @@ export interface Portfolio {
 
 // Auth Types
 export interface LoginCredentials {
-  username: string;
+  email?: string;
+  username?: string;
   password: string;
 }
 

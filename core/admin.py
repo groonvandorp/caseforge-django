@@ -88,3 +88,32 @@ class ModelAccessAdmin(admin.ModelAdmin):
     list_filter = ['granted_at']
     search_fields = ['user__username', 'model__name']
     raw_id_fields = ['user', 'model']
+
+
+@admin.register(UserSettings)
+class UserSettingsAdmin(admin.ModelAdmin):
+    list_display = ['user', 'theme', 'preferred_model']
+    list_filter = ['theme']
+    search_fields = ['user__username']
+    raw_id_fields = ['user', 'preferred_model']
+    
+    fieldsets = [
+        ('User', {
+            'fields': ['user']
+        }),
+        ('Appearance', {
+            'fields': ['theme'],
+            'description': 'Choose your preferred theme for the admin interface'
+        }),
+        ('Preferences', {
+            'fields': ['preferred_model', 'settings_json'],
+            'classes': ['collapse']
+        }),
+    ]
+    
+    def get_or_create_for_user(self, user):
+        obj, created = UserSettings.objects.get_or_create(
+            user=user,
+            defaults={'theme': 'dark'}
+        )
+        return obj

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container,
-  Grid,
   Paper,
   Typography,
   Box,
   Card,
   CardContent,
-  CardActions,
   Button,
   Table,
   TableBody,
@@ -19,6 +17,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Chip,
 } from '@mui/material';
 import {
   Visibility,
@@ -26,14 +25,14 @@ import {
   Delete,
   Star,
 } from '@mui/icons-material';
-import { ProcessModel, NodeDocument, NodeBookmark } from '../types';
+import { ProcessModel, NodeDocument } from '../types';
 import { apiService } from '../services/api';
 
 const Dashboard: React.FC = () => {
   const [models, setModels] = useState<ProcessModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [specifications, setSpecifications] = useState<NodeDocument[]>([]);
-  const [bookmarks, setBookmarks] = useState<NodeBookmark[]>([]);
+  const [bookmarkCounts, setBookmarkCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,7 +47,9 @@ const Dashboard: React.FC = () => {
 
   const loadModels = async () => {
     try {
+      console.log('Loading models...');
       const modelsData = await apiService.getModels();
+      console.log('Models data received:', modelsData);
       setModels(modelsData);
       if (modelsData.length > 0) {
         setSelectedModel(modelsData[0].model_key);
@@ -63,13 +64,13 @@ const Dashboard: React.FC = () => {
     
     try {
       setLoading(true);
-      const [specsData, bookmarksData] = await Promise.all([
+      const [specsData, bookmarkCountsData] = await Promise.all([
         apiService.getDashboardSpecs(selectedModel),
-        // apiService.getBookmarks(selectedModel), // TODO: Implement this endpoint
+        apiService.getBookmarkCounts(selectedModel),
       ]);
       
       setSpecifications(specsData);
-      // setBookmarks(bookmarksData);
+      setBookmarkCounts(bookmarkCountsData);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
@@ -129,9 +130,9 @@ const Dashboard: React.FC = () => {
         </FormControl>
       </Box>
 
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
         {/* Saved Specifications */}
-        <Grid item xs={12} lg={8}>
+        <Box sx={{ flex: '1 1 65%', minWidth: 600 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Saved Use Case Specifications
@@ -205,10 +206,10 @@ const Dashboard: React.FC = () => {
               </TableContainer>
             )}
           </Paper>
-        </Grid>
+        </Box>
 
         {/* Bookmarked Processes */}
-        <Grid item xs={12} lg={4}>
+        <Box sx={{ flex: '1 1 35%', minWidth: 300 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Bookmarked Processes
@@ -241,8 +242,8 @@ const Dashboard: React.FC = () => {
               </Box>
             )}
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Container>
   );
 };

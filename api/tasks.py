@@ -4,6 +4,7 @@ from core.models import ProcessNode, NodeDocument, NodeUsecaseCandidate
 from .services import OpenAIService, ContextService, DocumentService
 import uuid
 import logging
+from typing import List
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
