@@ -16,6 +16,8 @@ import {
   AccordionDetails,
   Chip,
   CircularProgress,
+  LinearProgress,
+  Alert,
   Divider,
 } from '@mui/material';
 import {
@@ -26,6 +28,7 @@ import {
   Delete,
   Description,
   CheckCircle,
+  PlayArrow,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import SimpleProcessTree from '../components/Process/SimpleProcessTree';
@@ -40,6 +43,11 @@ const Composer: React.FC = () => {
   const [nodeDocuments, setNodeDocuments] = useState<NodeDocument[]>([]);
   const [usecaseCandidates, setUsecaseCandidates] = useState<NodeUsecaseCandidate[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [taskProgress, setTaskProgress] = useState<{
+    current: number;
+    total: number;
+    status: string;
+  } | null>(null);
   const [loadingUsecases, setLoadingUsecases] = useState(false);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
 
@@ -115,29 +123,91 @@ const Composer: React.FC = () => {
 
   const handleGenerateDetails = async () => {
     if (!selectedNode) return;
-
+    
     setLoadingDetails(true);
+    
     try {
-      // TODO: Implement AI generation endpoint
-      console.log('Generate process details for:', selectedNode.code);
-      // For now, create a mock document
-      const mockDocument: NodeDocument = {
-        id: Date.now(),
-        node: selectedNode.id,
-        node_code: selectedNode.code,
-        node_name: selectedNode.name,
-        document_type: 'process_details',
-        title: `Process Details: ${selectedNode.name}`,
-        content: `Generated process details for ${selectedNode.code}`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setProcessDetails(mockDocument);
+      // Start the async task
+      const response = await apiService.api.post(`/nodes/${selectedNode.id}/generate_details/`, {
+        include_branch: true,
+        cross_category: true
+      });
+      
+      if (response.status === 202) {
+        const taskId = response.data.task_id;
+        console.log('Task started:', taskId);
+        
+        // Show initial success message
+        alert(`Process details generation started for "${selectedNode.name}". This will run in the background - you can continue using the interface.`);
+        
+        // Start polling for task status
+        pollTaskStatus(taskId);
+      }
     } catch (error) {
-      console.error('Failed to generate process details:', error);
-    } finally {
+      console.error('Failed to start process details generation:', error);
+      alert('Failed to start process details generation. Please try again.');
       setLoadingDetails(false);
     }
+  };
+
+  const pollTaskStatus = async (taskId: string, maxAttempts = 30) => {
+    let attempts = 0;
+    
+    const poll = async () => {
+      try {
+        attempts++;
+        const response = await apiService.api.get(`/nodes/task-status/${taskId}/`);
+        const taskData = response.data;
+        
+        console.log(`Task ${taskId} status:`, taskData.status, taskData);
+        
+        // Update progress if we have progress info
+        if (taskData.status === 'PROGRESS' && taskData.info) {
+          setTaskProgress({
+            current: taskData.info.current || 0,
+            total: taskData.info.total || 4,
+            status: taskData.info.status || 'Processing...'
+          });
+        }
+        
+        if (taskData.ready) {
+          setLoadingDetails(false);
+          setTaskProgress(null);
+          
+          if (taskData.success) {
+            console.log('Task completed successfully:', taskData.result);
+            const resultStatus = taskData.result?.status || `Process details generated successfully for "${selectedNode?.name}"`;
+            alert(`${resultStatus}. Check the Documents section below.`);
+            
+            // Refresh documents to show the new document
+            if (selectedNode) {
+              loadNodeData();
+            }
+          } else {
+            console.error('Task failed:', taskData.error);
+            alert(`Failed to generate process details: ${taskData.error || 'Unknown error'}`);
+          }
+          return;
+        }
+        
+        // Continue polling if not ready and haven't exceeded max attempts
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000); // Poll every 2 seconds
+        } else {
+          setLoadingDetails(false);
+          setTaskProgress(null);
+          alert('Process details generation is taking longer than expected. Please check the Documents section later.');
+        }
+      } catch (error) {
+        console.error('Failed to check task status:', error);
+        setLoadingDetails(false);
+        setTaskProgress(null);
+        alert('Unable to check generation status. Please refresh the page to see if the document was created.');
+      }
+    };
+    
+    // Start polling after a short delay
+    setTimeout(poll, 1000);
   };
 
   const handleGenerateUsecases = async () => {
@@ -339,6 +409,39 @@ const Composer: React.FC = () => {
                     variant="outlined"
                   />
                 </Box>
+
+                {/* Generate Process Details Button - only for leaf nodes */}
+                {selectedNode.is_leaf && (
+                  <Box sx={{ mb: 3 }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<AutoAwesome />}
+                      onClick={handleGenerateDetails}
+                      disabled={loadingDetails}
+                      fullWidth
+                      sx={{ mb: 1 }}
+                    >
+                      {loadingDetails ? 'Generating...' : 'Generate Process Details'}
+                    </Button>
+                    
+                    {/* Progress indicator */}
+                    {taskProgress && (
+                      <Box sx={{ mt: 2 }}>
+                        <Alert severity="info" sx={{ mb: 1 }}>
+                          {taskProgress.status}
+                        </Alert>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={(taskProgress.current / taskProgress.total) * 100}
+                          sx={{ mb: 1 }}
+                        />
+                        <Typography variant="body2" color="text.secondary" align="center">
+                          Step {taskProgress.current} of {taskProgress.total}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
                 
                 <Divider sx={{ my: 2 }} />
                 

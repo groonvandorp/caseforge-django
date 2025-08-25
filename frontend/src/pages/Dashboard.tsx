@@ -32,6 +32,7 @@ const Dashboard: React.FC = () => {
   const [models, setModels] = useState<ProcessModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [specifications, setSpecifications] = useState<NodeDocument[]>([]);
+  const [recentProcessDetails, setRecentProcessDetails] = useState<NodeDocument[]>([]);
   const [bookmarkCounts, setBookmarkCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
@@ -64,12 +65,14 @@ const Dashboard: React.FC = () => {
     
     try {
       setLoading(true);
-      const [specsData, bookmarkCountsData] = await Promise.all([
+      const [specsData, processDetailsData, bookmarkCountsData] = await Promise.all([
         apiService.getDashboardSpecs(selectedModel),
+        apiService.api.get('/documents/', { params: { model_key: selectedModel, document_type: 'process_details' } }).then(res => res.data.results || res.data),
         apiService.getBookmarkCounts(selectedModel),
       ]);
       
       setSpecifications(specsData);
+      setRecentProcessDetails(processDetailsData.slice(0, 10)); // Show only recent 10
       setBookmarkCounts(bookmarkCountsData);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -87,12 +90,50 @@ const Dashboard: React.FC = () => {
     window.open(`/viewer?docId=${spec.id}`, '_blank');
   };
 
+  const handleViewProcessDetails = (doc: NodeDocument) => {
+    // Navigate to viewer with document ID
+    window.open(`/viewer?docId=${doc.id}`, '_blank');
+  };
+
   const handleDownloadSpec = async (spec: NodeDocument) => {
     try {
       // TODO: Implement DOCX export
       console.log('Download spec:', spec.id);
+      const response = await apiService.api.get(`/documents/${spec.id}/download/`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob link and download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${spec.title || 'document'}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     } catch (error) {
       console.error('Failed to download spec:', error);
+      alert('Download failed. The export feature may not be implemented yet.');
+    }
+  };
+
+  const handleDownloadProcessDetails = async (doc: NodeDocument) => {
+    try {
+      const response = await apiService.api.get(`/documents/${doc.id}/download/`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob link and download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${doc.title || 'process-details'}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Failed to download document:', error);
+      alert('Download failed. The export feature may not be implemented yet.');
     }
   };
 
@@ -103,6 +144,17 @@ const Dashboard: React.FC = () => {
         setSpecifications(specs => specs.filter(s => s.id !== spec.id));
       } catch (error) {
         console.error('Failed to delete spec:', error);
+      }
+    }
+  };
+
+  const handleDeleteProcessDetails = async (doc: NodeDocument) => {
+    if (window.confirm('Are you sure you want to delete this process details document?')) {
+      try {
+        await apiService.api.delete(`/documents/${doc.id}/`);
+        setRecentProcessDetails(docs => docs.filter(d => d.id !== doc.id));
+      } catch (error) {
+        console.error('Failed to delete document:', error);
       }
     }
   };
@@ -128,6 +180,85 @@ const Dashboard: React.FC = () => {
             ))}
           </Select>
         </FormControl>
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 4 }}>
+        {/* Recently Generated Process Details */}
+        <Box sx={{ flex: '1 1 100%', minWidth: 600 }}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Recently Generated Process Details
+            </Typography>
+            
+            {loading ? (
+              <Typography>Loading process details...</Typography>
+            ) : recentProcessDetails.length === 0 ? (
+              <Typography color="text.secondary">
+                No process details found. Generate some using the "Generate Process Details" button in the Composer tab.
+              </Typography>
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Title</TableCell>
+                      <TableCell>Process</TableCell>
+                      <TableCell>Generated</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {recentProcessDetails.map((doc) => (
+                      <TableRow key={doc.id}>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                            {doc.title}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {doc.node_code}: {doc.node_name}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {new Date(doc.created_at).toLocaleDateString()}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                              size="small"
+                              startIcon={<Visibility />}
+                              onClick={() => handleViewProcessDetails(doc)}
+                            >
+                              Open
+                            </Button>
+                            <Button
+                              size="small"
+                              startIcon={<GetApp />}
+                              onClick={() => handleDownloadProcessDetails(doc)}
+                            >
+                              Download
+                            </Button>
+                            <Button
+                              size="small"
+                              color="error"
+                              startIcon={<Delete />}
+                              onClick={() => handleDeleteProcessDetails(doc)}
+                            >
+                              Delete
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Paper>
+        </Box>
       </Box>
 
       <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>

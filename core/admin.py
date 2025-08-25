@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from .models import (
     ProcessModel, ProcessModelVersion, ProcessNode, SourceDocument,
     NodeDocument, NodeUsecaseCandidate, NodeBookmark, Portfolio,
-    PortfolioItem, UserSettings, ModelAccess, NodeEmbedding
+    PortfolioItem, UserSettings, ModelAccess, NodeEmbedding, AdminSettings
 )
 
 User = get_user_model()
@@ -117,3 +117,56 @@ class UserSettingsAdmin(admin.ModelAdmin):
             defaults={'theme': 'dark'}
         )
         return obj
+
+
+@admin.register(AdminSettings)
+class AdminSettingsAdmin(admin.ModelAdmin):
+    list_display = ['key', 'value_preview', 'description', 'updated_at']
+    list_filter = ['created_at', 'updated_at']
+    search_fields = ['key', 'description']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    fieldsets = [
+        ('Setting Information', {
+            'fields': ['key', 'description']
+        }),
+        ('Value', {
+            'fields': ['value'],
+            'description': 'Enter the setting value. For API keys, this will be securely stored.'
+        }),
+        ('Timestamps', {
+            'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse']
+        }),
+    ]
+    
+    def value_preview(self, obj):
+        """Show a preview of the value, hiding sensitive data"""
+        if not obj.value:
+            return "None"
+        
+        # Hide API keys and sensitive data
+        if 'api_key' in obj.key.lower() or 'secret' in obj.key.lower() or 'token' in obj.key.lower():
+            if len(obj.value) > 10:
+                return f"{obj.value[:6]}...{obj.value[-4:]}"
+            else:
+                return "***hidden***"
+        
+        # Truncate long values
+        if len(obj.value) > 50:
+            return f"{obj.value[:47]}..."
+        
+        return obj.value
+    
+    value_preview.short_description = 'Value'
+    
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        
+        # Add help text for common settings
+        if obj and obj.key == 'openai_api_key':
+            form.base_fields['value'].help_text = 'Your OpenAI API key (starts with sk-...)'
+        elif obj and obj.key == 'openai_model':
+            form.base_fields['value'].help_text = 'OpenAI model to use (e.g., gpt-4o, gpt-3.5-turbo)'
+        
+        return form
