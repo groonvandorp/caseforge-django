@@ -257,3 +257,38 @@ class ModelAccess(models.Model):
 
     def __str__(self):
         return f"{self.user.username} -> {self.model.name}"
+
+
+class AdminSettings(models.Model):
+    """System-wide admin settings"""
+    key = models.CharField(max_length=100, unique=True)
+    value = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'admin_settings'
+        verbose_name = 'Admin Setting'
+        verbose_name_plural = 'Admin Settings'
+
+    def __str__(self):
+        return f"{self.key}: {self.value[:50]}..." if self.value and len(self.value) > 50 else f"{self.key}: {self.value}"
+    
+    @classmethod
+    def get_setting(cls, key, default=None):
+        """Get a setting value by key"""
+        try:
+            setting = cls.objects.get(key=key)
+            return setting.value
+        except cls.DoesNotExist:
+            return default
+    
+    @classmethod
+    def set_setting(cls, key, value, description=None):
+        """Set or update a setting value"""
+        setting, created = cls.objects.update_or_create(
+            key=key,
+            defaults={'value': value, 'description': description}
+        )
+        return setting

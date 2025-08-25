@@ -190,13 +190,112 @@ class ProcessNodeViewSet(ModelViewSet):
         except ProcessNode.DoesNotExist:
             return Response({'error': 'Node not found'}, status=404)
 
+    @action(detail=True, methods=['post'])
+    def generate_details(self, request, pk=None):
+        """Generate process details using AI for a specific node"""
+        node = self.get_object()
+        
+        # Only allow generation for leaf nodes (nodes with no children)
+        if node.children.exists():
+            return Response(
+                {'error': 'Process details can only be generated for leaf nodes (nodes with no children)'}, 
+                status=400
+            )
+        
+        # Get parameters from request
+        include_branch = request.data.get('include_branch', True)
+        cross_category = request.data.get('cross_category', True)
+        
+        # Import the task here to avoid circular imports
+        from .tasks import generate_process_details_task
+        
+        # Start the async task
+        try:
+            task = generate_process_details_task.delay(
+                user_id=request.user.id,
+                node_id=node.id,
+                include_branch=include_branch,
+                cross_category=cross_category
+            )
+            
+            return Response({
+                'message': 'Process details generation started. This will take a moment...',
+                'task_id': task.id,
+                'node_id': node.id,
+                'node_code': node.code,
+                'node_name': node.name,
+                'status': 'PENDING'
+            }, status=202)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to start process details generation: {str(e)}'}, 
+                status=500
+            )
+
+    @action(detail=False, methods=['get'], url_path='task-status/(?P<task_id>[^/.]+)')
+    def task_status(self, request, task_id=None):
+        """Check the status of a background task"""
+        try:
+            from celery import Celery
+            from django.conf import settings
+            
+            # Get celery app instance
+            celery_app = Celery('caseforge')
+            celery_app.config_from_object('django.conf:settings', namespace='CELERY')
+            
+            # Get task result
+            task_result = celery_app.AsyncResult(task_id)
+            
+            response_data = {
+                'task_id': task_id,
+                'status': task_result.status,
+                'ready': task_result.ready(),
+            }
+            
+            # Add progress information if task is in progress
+            if task_result.status == 'PROGRESS' and hasattr(task_result, 'info') and task_result.info:
+                response_data['info'] = task_result.info
+            
+            if task_result.ready():
+                if task_result.successful():
+                    response_data['result'] = task_result.result
+                    response_data['success'] = task_result.result.get('success', False) if isinstance(task_result.result, dict) else False
+                else:
+                    response_data['error'] = str(task_result.info)
+                    response_data['success'] = False
+            
+            return Response(response_data)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to get task status: {str(e)}'}, 
+                status=500
+            )
+
 
 class NodeDocumentViewSet(ModelViewSet):
     serializer_class = NodeDocumentSerializer
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        return NodeDocument.objects.filter(user=self.request.user)
+        queryset = NodeDocument.objects.filter(user=self.request.user)
+        
+        # Filter by model_key if provided
+        model_key = self.request.query_params.get('model_key')
+        if model_key:
+            queryset = queryset.filter(
+                node__model_version__model__model_key=model_key,
+                node__model_version__is_current=True
+            )
+        
+        # Filter by document_type if provided
+        document_type = self.request.query_params.get('document_type')
+        if document_type:
+            queryset = queryset.filter(document_type=document_type)
+        
+        # Order by most recent first
+        return queryset.select_related('node').order_by('-created_at')
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
