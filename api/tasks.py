@@ -234,6 +234,13 @@ def generate_usecase_candidates_task(user_id: int, node_id: int, include_branch:
         saved_candidates = []
         for candidate_data in candidates:
             candidate_uid = str(uuid.uuid4())
+            
+            # Add model metadata to the candidate data
+            candidate_data_with_metadata = candidate_data.copy()
+            if 'metadata' not in candidate_data_with_metadata:
+                candidate_data_with_metadata['metadata'] = {}
+            candidate_data_with_metadata['metadata']['model_key'] = node.model_version.model.model_key
+            
             candidate = NodeUsecaseCandidate.objects.create(
                 user=user,
                 node=node,
@@ -242,7 +249,7 @@ def generate_usecase_candidates_task(user_id: int, node_id: int, include_branch:
                 description=candidate_data.get('description', ''),
                 impact_assessment=candidate_data.get('impact_assessment', ''),
                 complexity_score=candidate_data.get('complexity_score'),
-                meta_json=candidate_data
+                meta_json=candidate_data_with_metadata  # Store with metadata
             )
             saved_candidates.append(candidate.id)
         

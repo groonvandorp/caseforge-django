@@ -14,18 +14,11 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Chip,
-  IconButton,
-  Tooltip,
 } from '@mui/material';
 import {
   Visibility,
   GetApp,
   Delete,
-  Star,
-  Launch,
-  AutoAwesome,
-  HourglassEmpty,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { NodeDocument, ProcessNode } from '../types';
@@ -39,8 +32,6 @@ const Dashboard: React.FC = () => {
   const [recentProcessDetails, setRecentProcessDetails] = useState<NodeDocument[]>([]);
   const [bookmarkedProcesses, setBookmarkedProcesses] = useState<Record<string, ProcessNode>>({});
   const [bookmarkDates, setBookmarkDates] = useState<Record<string, string>>({});
-  const [usecaseCounts, setUsecaseCounts] = useState<Record<number, number>>({});
-  const [usecaseCountsLoading, setUsecaseCountsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState({
     totalUsecaseCandidates: 0,
@@ -49,17 +40,19 @@ const Dashboard: React.FC = () => {
     statsLoading: true
   });
 
-  // Sorting state
-  const [processDetailsSort, setProcessDetailsSort] = useState<{ field: string; direction: 'asc' | 'desc' }>({ field: 'created_at', direction: 'desc' });
-  const [specificationsSort, setSpecificationsSort] = useState<{ field: string; direction: 'asc' | 'desc' }>({ field: 'created_at', direction: 'desc' });
-  const [bookmarksSort, setBookmarksSort] = useState<{ field: string; direction: 'asc' | 'desc' }>({ field: 'code', direction: 'asc' });
-
-
   const loadDashboardData = useCallback(async () => {
     if (!appState.selectedModelKey) return;
     
     try {
       setLoading(true);
+      // Reset stats to loading state immediately
+      setDashboardStats({
+        totalUsecaseCandidates: 0,
+        totalUsecaseSpecs: 0,
+        totalDetailedProcesses: 0,
+        statsLoading: true
+      });
+      
       const [specsData, processDetailsData, statsData] = await Promise.all([
         apiService.getDashboardSpecs(appState.selectedModelKey),
         apiService.api.get('/documents/', { params: { model_key: appState.selectedModelKey, document_type: 'process_details' } }).then(res => res.data.results || res.data),
@@ -73,27 +66,21 @@ const Dashboard: React.FC = () => {
         statsLoading: false
       });
 
-      // Load full bookmark details instead of using counts + separate API calls
-      const bookmarkedProcessDetails: Record<string, ProcessNode> = {};
-      const bookmarkCreatedDates: Record<string, string> = {};
-      
+      // Load bookmarks
       try {
-        console.log('Loading bookmarks directly from bookmark API...');
         const bookmarks = await apiService.getBookmarks();
-        console.log('Successfully loaded bookmarks:', bookmarks);
+        const bookmarkedProcessDetails: Record<string, ProcessNode> = {};
+        const bookmarkCreatedDates: Record<string, string> = {};
         
-        // Build process details map from bookmark data (already includes code and name)
         bookmarks.forEach((bookmark) => {
-          // Create a simplified ProcessNode object from bookmark data
           const processNode: ProcessNode = {
             id: bookmark.node,
             code: bookmark.node_code,
             name: bookmark.node_name,
-            // Add minimal required fields - we mainly need code and name for display
             level: 0,
             is_leaf: true,
             children_count: 0,
-            model_version: 0 as any, // These aren't needed for bookmark display
+            model_version: 0 as any,
             parent: undefined,
             description: undefined,
           };
@@ -103,36 +90,10 @@ const Dashboard: React.FC = () => {
         
         setBookmarkedProcesses(bookmarkedProcessDetails);
         setBookmarkDates(bookmarkCreatedDates);
-        
-        // Load usecase counts for the bookmarked processes in the background
-        if (bookmarks.length > 0) {
-          setUsecaseCountsLoading(true);
-          // Load usecase counts asynchronously without blocking the main UI
-          setTimeout(async () => {
-            try {
-              const nodeIds = bookmarks.map(b => b.node);
-              console.log('Loading usecase counts for node IDs:', nodeIds);
-              const counts = await apiService.getUsecaseCounts(nodeIds);
-              console.log('Successfully loaded usecase counts:', counts);
-              setUsecaseCounts(counts);
-            } catch (error: any) {
-              console.error('Failed to load usecase counts:', error);
-              setUsecaseCounts({});
-            } finally {
-              setUsecaseCountsLoading(false);
-            }
-          }, 100); // Small delay to let the main UI render first
-        } else {
-          setUsecaseCounts({});
-          setUsecaseCountsLoading(false);
-        }
-        
       } catch (error: any) {
         console.error('Failed to load bookmarks:', error.response?.status, error.response?.data);
-        // Fallback: keep the existing empty state
         setBookmarkedProcesses({});
         setBookmarkDates({});
-        setUsecaseCounts({});
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -146,29 +107,22 @@ const Dashboard: React.FC = () => {
     if (appState.selectedModelKey) {
       loadDashboardData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appState.selectedModelKey]);
-
+  }, [appState.selectedModelKey, loadDashboardData]);
 
   const handleViewSpec = (spec: NodeDocument) => {
-    // Navigate to viewer with spec ID
     window.open(`/viewer?docId=${spec.id}`, '_blank');
   };
 
   const handleViewProcessDetails = (doc: NodeDocument) => {
-    // Navigate to viewer with document ID
     window.open(`/viewer?docId=${doc.id}`, '_blank');
   };
 
   const handleDownloadSpec = async (spec: NodeDocument) => {
     try {
-      // TODO: Implement DOCX export
-      console.log('Download spec:', spec.id);
       const response = await apiService.api.get(`/documents/${spec.id}/download/`, {
         responseType: 'blob'
       });
       
-      // Create blob link and download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -188,7 +142,6 @@ const Dashboard: React.FC = () => {
         responseType: 'blob'
       });
       
-      // Create blob link and download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -225,13 +178,10 @@ const Dashboard: React.FC = () => {
   };
 
   const handleOpenInComposer = (processCode: string) => {
-    console.log('Navigating to Composer with process code:', processCode);
     const process = bookmarkedProcesses[processCode];
     if (process) {
-      // Navigate to Composer with the node ID instead of code (more reliable)
       navigate(`/composer?nodeId=${process.id}`);
     } else {
-      // Fallback to code-based navigation
       navigate(`/composer?processCode=${processCode}`);
     }
   };
@@ -243,7 +193,6 @@ const Dashboard: React.FC = () => {
     if (window.confirm(`Are you sure you want to remove the bookmark for process ${processCode}?`)) {
       try {
         await apiService.toggleBookmark(process.id);
-        // Remove from local state
         setBookmarkedProcesses(prev => {
           const updated = { ...prev };
           delete updated[processCode];
@@ -254,67 +203,12 @@ const Dashboard: React.FC = () => {
           delete updated[processCode];
           return updated;
         });
-        setUsecaseCounts(prev => {
-          const updated = { ...prev };
-          delete updated[process.id];
-          return updated;
-        });
       } catch (error) {
         console.error('Failed to delete bookmark:', error);
         alert('Failed to remove bookmark. Please try again.');
       }
     }
   };
-
-  // Sorting helper functions
-  const handleSort = (field: string, currentSort: { field: string; direction: 'asc' | 'desc' }, setSort: React.Dispatch<React.SetStateAction<{ field: string; direction: 'asc' | 'desc' }>>) => {
-    const direction = currentSort.field === field && currentSort.direction === 'asc' ? 'desc' : 'asc';
-    setSort({ field, direction });
-  };
-
-  const sortData = <T extends any>(data: T[], sortConfig: { field: string; direction: 'asc' | 'desc' }, getValue: (item: T) => any) => {
-    return [...data].sort((a, b) => {
-      const aVal = getValue(a);
-      const bVal = getValue(b);
-      
-      if (aVal === bVal) return 0;
-      
-      const comparison = aVal < bVal ? -1 : 1;
-      return sortConfig.direction === 'asc' ? comparison : -comparison;
-    });
-  };
-
-  // Sort data arrays
-  const sortedProcessDetails = sortData(recentProcessDetails, processDetailsSort, (doc) => {
-    switch (processDetailsSort.field) {
-      case 'title': return doc.title?.toLowerCase() || '';
-      case 'process': return `${doc.node_code}: ${doc.node_name}`.toLowerCase();
-      case 'created_at': return new Date(doc.created_at).getTime();
-      default: return '';
-    }
-  });
-
-  const sortedSpecifications = sortData(specifications, specificationsSort, (spec) => {
-    switch (specificationsSort.field) {
-      case 'title': return spec.title?.toLowerCase() || '';
-      case 'process': return `${spec.node_code}: ${spec.node_name}`.toLowerCase();
-      case 'created_at': return new Date(spec.created_at).getTime();
-      default: return '';
-    }
-  });
-
-  const sortedBookmarks = sortData(Object.keys(bookmarkedProcesses), bookmarksSort, (code) => {
-    const process = bookmarkedProcesses[code];
-    switch (bookmarksSort.field) {
-      case 'process': return process ? `${code}: ${process.name}`.toLowerCase() : code.toLowerCase();
-      case 'usecases': return process ? (usecaseCounts[process.id] || 0) : 0;
-      case 'created_at': return bookmarkDates[code] ? new Date(bookmarkDates[code]).getTime() : 0;
-      case 'code': 
-      default: 
-        // Natural sort for process codes like 1.1.1.1, 1.1.1.2, etc.
-        return code.split('.').map(n => parseInt(n) || 0);
-    }
-  });
 
   return (
     <Container maxWidth="xl">
@@ -366,307 +260,179 @@ const Dashboard: React.FC = () => {
         </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 4 }}>
-        {/* Recently Generated Process Details */}
-        <Box sx={{ flex: '1 1 100%', minWidth: 600 }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Recently Generated Process Details
-            </Typography>
-            
-            {loading ? (
-              <Typography>Loading process details...</Typography>
-            ) : recentProcessDetails.length === 0 ? (
-              <Typography color="text.secondary">
-                No process details found. Generate some using the "Generate Process Details" button in the Composer tab.
-              </Typography>
-            ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <TableSortLabel
-                          active={processDetailsSort.field === 'title'}
-                          direction={processDetailsSort.direction}
-                          onClick={() => handleSort('title', processDetailsSort, setProcessDetailsSort)}
+      {/* Recently Generated Process Details Table */}
+      <Box sx={{ mb: 4 }}>
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Recently Generated Process Details ({recentProcessDetails.length})
+          </Typography>
+          {loading ? (
+            <Typography>Loading...</Typography>
+          ) : recentProcessDetails.length === 0 ? (
+            <Typography color="text.secondary">No process details found.</Typography>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Process Code</TableCell>
+                    <TableCell>Created</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {recentProcessDetails.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell>{doc.title}</TableCell>
+                      <TableCell>{doc.node_code}</TableCell>
+                      <TableCell>{new Date(doc.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell align="right">
+                        <Button
+                          size="small"
+                          startIcon={<Visibility />}
+                          onClick={() => handleViewProcessDetails(doc)}
                         >
-                          Title
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell>
-                        <TableSortLabel
-                          active={processDetailsSort.field === 'process'}
-                          direction={processDetailsSort.direction}
-                          onClick={() => handleSort('process', processDetailsSort, setProcessDetailsSort)}
+                          View
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<GetApp />}
+                          onClick={() => handleDownloadProcessDetails(doc)}
+                          sx={{ ml: 1 }}
                         >
-                          Process
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell sx={{ width: 120 }}>
-                        <TableSortLabel
-                          active={processDetailsSort.field === 'created_at'}
-                          direction={processDetailsSort.direction}
-                          onClick={() => handleSort('created_at', processDetailsSort, setProcessDetailsSort)}
+                          Download
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<Delete />}
+                          onClick={() => handleDeleteProcessDetails(doc)}
+                          color="error"
+                          sx={{ ml: 1 }}
                         >
-                          Generated
-                        </TableSortLabel>
+                          Delete
+                        </Button>
                       </TableCell>
-                      <TableCell sx={{ width: 200 }}>Actions</TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {sortedProcessDetails.map((doc) => (
-                      <TableRow key={doc.id}>
-                        <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                            {doc.title}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {doc.node_code}: {doc.node_name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {new Date(doc.created_at).toLocaleDateString()}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Button
-                              size="small"
-                              startIcon={<Visibility />}
-                              onClick={() => handleViewProcessDetails(doc)}
-                            >
-                              Open
-                            </Button>
-                            <Button
-                              size="small"
-                              startIcon={<GetApp />}
-                              onClick={() => handleDownloadProcessDetails(doc)}
-                            >
-                              Download
-                            </Button>
-                            <Button
-                              size="small"
-                              color="error"
-                              startIcon={<Delete />}
-                              onClick={() => handleDeleteProcessDetails(doc)}
-                            >
-                              Delete
-                            </Button>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </Paper>
-        </Box>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
       </Box>
 
       <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-        {/* Saved Specifications */}
-        <Box sx={{ flex: '1 1 65%', minWidth: 600 }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Saved Use Case Specifications
-            </Typography>
-            
-            {loading ? (
-              <Typography>Loading specifications...</Typography>
-            ) : specifications.length === 0 ? (
-              <Typography color="text.secondary">
-                No specifications found. Create some in the Composer tab.
-              </Typography>
-            ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <TableSortLabel
-                          active={specificationsSort.field === 'title'}
-                          direction={specificationsSort.direction}
-                          onClick={() => handleSort('title', specificationsSort, setSpecificationsSort)}
-                        >
-                          Title
-                        </TableSortLabel>
+        {/* Use Case Specifications Table */}
+        <Paper sx={{ p: 3, flex: 1, minWidth: 0 }}>
+          <Typography variant="h6" gutterBottom>
+            Saved Use Case Specifications ({specifications.length})
+          </Typography>
+          {loading ? (
+            <Typography>Loading...</Typography>
+          ) : specifications.length === 0 ? (
+            <Typography color="text.secondary">No specifications found.</Typography>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Process Code</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {specifications.map((spec) => (
+                    <TableRow key={spec.id}>
+                      <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {spec.title}
                       </TableCell>
-                      <TableCell>
-                        <TableSortLabel
-                          active={specificationsSort.field === 'process'}
-                          direction={specificationsSort.direction}
-                          onClick={() => handleSort('process', specificationsSort, setSpecificationsSort)}
+                      <TableCell>{spec.node_code}</TableCell>
+                      <TableCell align="right">
+                        <Button
+                          size="small"
+                          startIcon={<Visibility />}
+                          onClick={() => handleViewSpec(spec)}
+                          sx={{ minWidth: 'auto', p: 0.5 }}
                         >
-                          Process
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell sx={{ width: 120 }}>
-                        <TableSortLabel
-                          active={specificationsSort.field === 'created_at'}
-                          direction={specificationsSort.direction}
-                          onClick={() => handleSort('created_at', specificationsSort, setSpecificationsSort)}
+                          View
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<GetApp />}
+                          onClick={() => handleDownloadSpec(spec)}
+                          sx={{ ml: 0.5, minWidth: 'auto', p: 0.5 }}
                         >
-                          Created
-                        </TableSortLabel>
+                          Download
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<Delete />}
+                          onClick={() => handleDeleteSpec(spec)}
+                          color="error"
+                          sx={{ ml: 0.5, minWidth: 'auto', p: 0.5 }}
+                        >
+                          Delete
+                        </Button>
                       </TableCell>
-                      <TableCell sx={{ width: 200 }}>Actions</TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {sortedSpecifications.map((spec) => (
-                      <TableRow key={spec.id}>
-                        <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                            {spec.title}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {spec.node_code}: {spec.node_name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {new Date(spec.created_at).toLocaleDateString()}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Button
-                              size="small"
-                              startIcon={<Visibility />}
-                              onClick={() => handleViewSpec(spec)}
-                            >
-                              Open
-                            </Button>
-                            <Button
-                              size="small"
-                              startIcon={<GetApp />}
-                              onClick={() => handleDownloadSpec(spec)}
-                            >
-                              Download
-                            </Button>
-                            <Button
-                              size="small"
-                              color="error"
-                              startIcon={<Delete />}
-                              onClick={() => handleDeleteSpec(spec)}
-                            >
-                              Delete
-                            </Button>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </Paper>
-        </Box>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
 
-        {/* Bookmarked Processes */}
-        <Box sx={{ flex: '1 1 35%', minWidth: 300 }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Bookmarked Processes
-            </Typography>
-            
-{Object.keys(bookmarkedProcesses).length === 0 ? (
-              <Typography color="text.secondary">
-                No bookmarked processes. Add bookmarks in the Composer tab.
-              </Typography>
-            ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <TableSortLabel
-                          active={bookmarksSort.field === 'process'}
-                          direction={bookmarksSort.direction}
-                          onClick={() => handleSort('process', bookmarksSort, setBookmarksSort)}
-                        >
-                          Process
-                        </TableSortLabel>
+        {/* Bookmarked Processes Table */}
+        <Paper sx={{ p: 3, flex: 1, minWidth: 0 }}>
+          <Typography variant="h6" gutterBottom>
+            Bookmarked Processes ({Object.keys(bookmarkedProcesses).length})
+          </Typography>
+          {Object.keys(bookmarkedProcesses).length === 0 ? (
+            <Typography color="text.secondary">No bookmarked processes.</Typography>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Process Code</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {Object.entries(bookmarkedProcesses).map(([code, process]) => (
+                    <TableRow key={code}>
+                      <TableCell>{code}</TableCell>
+                      <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {process.name}
                       </TableCell>
-                      <TableCell>
-                        <TableSortLabel
-                          active={bookmarksSort.field === 'usecases'}
-                          direction={bookmarksSort.direction}
-                          onClick={() => handleSort('usecases', bookmarksSort, setBookmarksSort)}
+                      <TableCell align="right">
+                        <Button
+                          size="small"
+                          onClick={() => handleOpenInComposer(code)}
+                          sx={{ minWidth: 'auto', p: 0.5 }}
                         >
-                          AI Use Cases
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell sx={{ width: 120 }}>
-                        <TableSortLabel
-                          active={bookmarksSort.field === 'created_at'}
-                          direction={bookmarksSort.direction}
-                          onClick={() => handleSort('created_at', bookmarksSort, setBookmarksSort)}
+                          Open
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<Delete />}
+                          onClick={() => handleDeleteBookmark(code)}
+                          color="error"
+                          sx={{ ml: 0.5, minWidth: 'auto', p: 0.5 }}
                         >
-                          Created
-                        </TableSortLabel>
+                          Remove
+                        </Button>
                       </TableCell>
-                      <TableCell sx={{ width: 200 }}>Actions</TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {sortedBookmarks.map((code) => {
-                      const process = bookmarkedProcesses[code];
-                      const usecaseCount = process ? usecaseCounts[process.id] || 0 : 0;
-                      const createdDate = bookmarkDates[code];
-                      return (
-                        <TableRow key={code}>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                              {process ? `${code}: ${process.name}` : code}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" color="text.secondary">
-                              {usecaseCountsLoading ? '...' : usecaseCount}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" color="text.secondary">
-                              {createdDate ? new Date(createdDate).toLocaleDateString() : '--'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                              <Button
-                                size="small"
-                                startIcon={<Visibility />}
-                                onClick={() => handleOpenInComposer(code)}
-                              >
-                                Open
-                              </Button>
-                              <Button
-                                size="small"
-                                color="error"
-                                startIcon={<Delete />}
-                                onClick={() => handleDeleteBookmark(code)}
-                              >
-                                Delete
-                              </Button>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </Paper>
-        </Box>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Paper>
       </Box>
     </Container>
   );

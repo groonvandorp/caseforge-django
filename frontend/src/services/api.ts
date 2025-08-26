@@ -296,23 +296,70 @@ class ApiService {
     totalDetailedProcesses: number;
   }> {
     try {
-      // Get total usecase candidates
-      const usecasesResponse = await this.apiClient.get('/usecases/', {
-        params: { model_key: modelKey }
-      });
-      const totalUsecaseCandidates = usecasesResponse.data.count || (Array.isArray(usecasesResponse.data.results) ? usecasesResponse.data.results.length : usecasesResponse.data.length);
+      console.log(`Getting dashboard stats for model: ${modelKey}`);
 
-      // Get total usecase specifications (documents with type 'usecase_specification')
-      const specsResponse = await this.apiClient.get('/documents/', {
-        params: { model_key: modelKey, document_type: 'usecase_specification' }
-      });
-      const totalUsecaseSpecs = specsResponse.data.count || (Array.isArray(specsResponse.data.results) ? specsResponse.data.results.length : specsResponse.data.length);
+      // Use direct API approach since node-based counting has issues
+      console.log('Using direct document API calls for reliable counts...');
+      
+      const [directSpecs, directProcessDetails, usecasesResponse] = await Promise.all([
+        this.apiClient.get('/documents/', { params: { model_key: modelKey, document_type: 'usecase_spec' } }),
+        this.apiClient.get('/documents/', { params: { model_key: modelKey, document_type: 'process_details' } }),
+        this.apiClient.get('/usecases/') // Get all usecases to filter by model metadata
+      ]);
+      
+      const totalUsecaseSpecs = directSpecs.data.count || (Array.isArray(directSpecs.data.results) ? directSpecs.data.results.length : directSpecs.data.length);
+      const totalDetailedProcesses = directProcessDetails.data.count || (Array.isArray(directProcessDetails.data.results) ? directProcessDetails.data.results.length : directProcessDetails.data.length);
+      
+      // Filter usecases by model metadata
+      const allUsecases = usecasesResponse.data.results || usecasesResponse.data;
+      let totalUsecaseCandidates = 0;
+      
+      if (Array.isArray(allUsecases)) {
+        console.log(`Filtering ${allUsecases.length} usecases by model metadata for ${modelKey}`);
+        console.log('Sample usecase structure:', allUsecases[0]);
+        
+        const filteredUsecases = allUsecases.filter(usecase => {
+          // Try both meta_json.metadata.model_key and direct metadata.model_key
+          const modelKeyFromMeta = usecase.meta_json?.metadata?.model_key;
+          const modelKeyFromMetadata = usecase.metadata?.model_key;
+          
+          return modelKeyFromMeta === modelKey || modelKeyFromMetadata === modelKey;
+        });
+        
+        totalUsecaseCandidates = filteredUsecases.length;
+        console.log(`Model filtering result: ${totalUsecaseCandidates} usecases for model ${modelKey}`);
+        
+        if (filteredUsecases.length > 0) {
+          console.log('Sample filtered usecase:', filteredUsecases[0]);
+        }
+      } else {
+        console.warn('Usecases response is not an array:', allUsecases);
+        totalUsecaseCandidates = usecasesResponse.data.count || 0;
+      }
 
-      // Get total process details (documents with type 'process_details')
-      const processDetailsResponse = await this.apiClient.get('/documents/', {
-        params: { model_key: modelKey, document_type: 'process_details' }
+      console.log(`Direct API results for model ${modelKey}:`, {
+        totalUsecaseCandidates,
+        totalUsecaseSpecs,
+        totalDetailedProcesses
       });
-      const totalDetailedProcesses = processDetailsResponse.data.count || (Array.isArray(processDetailsResponse.data.results) ? processDetailsResponse.data.results.length : processDetailsResponse.data.length);
+      
+      console.log('Raw API responses breakdown:');
+      console.log('- Specs response:', {
+        count: directSpecs.data.count,
+        resultsLength: directSpecs.data.results?.length,
+        fullResponse: directSpecs.data
+      });
+      console.log('- Process details response:', {
+        count: directProcessDetails.data.count,
+        resultsLength: directProcessDetails.data.results?.length,
+        fullResponse: directProcessDetails.data
+      });
+      console.log('- Usecases response:', {
+        count: usecasesResponse.data.count,
+        resultsLength: usecasesResponse.data.results?.length,
+        fullResponse: usecasesResponse.data
+      });
+
 
       return {
         totalUsecaseCandidates,
