@@ -70,7 +70,9 @@ export const AppStateProvider: React.FC<{ children: ReactNode }> = ({ children }
       });
 
       try {
+        console.log('AppStateContext: Loading models...');
         const modelsData = await apiService.getModels();
+        console.log('AppStateContext: Models loaded successfully:', modelsData);
         
         if (isMounted) {
           setState(prev => {
@@ -93,8 +95,8 @@ export const AppStateProvider: React.FC<{ children: ReactNode }> = ({ children }
             return newState;
           });
         }
-      } catch (error) {
-        console.error('Failed to load models:', error);
+      } catch (error: any) {
+        console.error('AppStateContext: Failed to load models:', error.response?.status, error.response?.data || error.message);
         if (isMounted) {
           setState(prev => ({ ...prev, modelsLoading: false }));
         }

@@ -19,6 +19,7 @@ import {
   Description,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
+import { useSearchParams } from 'react-router-dom';
 import SimpleProcessTree from '../components/Process/SimpleProcessTree';
 import { ProcessNode, NodeDocument, NodeUsecaseCandidate } from '../types';
 import { apiService } from '../services/api';
@@ -26,6 +27,7 @@ import { useAppState } from '../contexts/AppStateContext';
 
 const Composer: React.FC = () => {
   const { state: appState } = useAppState();
+  const [searchParams, setSearchParams] = useSearchParams();
   // Use global model directly instead of local state
   const selectedModel = appState.selectedModelKey || '';
   const [selectedNode, setSelectedNode] = useState<ProcessNode | null>(null);
@@ -49,6 +51,45 @@ const Composer: React.FC = () => {
     setNodeDocuments([]);
     setUsecaseCandidates([]);
   }, [appState.selectedModelKey]);
+
+  // Handle processCode or nodeId from URL parameters (navigation from Dashboard)
+  useEffect(() => {
+    const processCode = searchParams.get('processCode');
+    const nodeId = searchParams.get('nodeId');
+    console.log('Composer: processCode from URL:', processCode, 'nodeId:', nodeId, 'selectedModel:', selectedModel, 'selectedNode:', selectedNode?.id);
+    
+    if (!selectedNode && selectedModel) {
+      if (nodeId) {
+        console.log('Composer: Loading process from node ID:', nodeId);
+        const loadProcessFromId = async () => {
+          try {
+            const process = await apiService.getNode(parseInt(nodeId));
+            console.log('Composer: Successfully loaded process from ID:', process);
+            setSelectedNode(process);
+            // Clear the URL parameter after loading
+            setSearchParams({});
+          } catch (error) {
+            console.error(`Composer: Failed to load process with ID ${nodeId}:`, error);
+          }
+        };
+        loadProcessFromId();
+      } else if (processCode) {
+        console.log('Composer: Loading process from code:', processCode);
+        const loadProcessFromCode = async () => {
+          try {
+            const process = await apiService.getNodeByCode(processCode, selectedModel!);
+            console.log('Composer: Successfully loaded process from code:', process);
+            setSelectedNode(process);
+            // Clear the URL parameter after loading
+            setSearchParams({});
+          } catch (error) {
+            console.error(`Composer: Failed to load process with code ${processCode}:`, error);
+          }
+        };
+        loadProcessFromCode();
+      }
+    }
+  }, [searchParams, selectedModel, selectedNode, setSearchParams]);
 
   const loadNodeData = useCallback(async () => {
     if (!selectedNode) return;

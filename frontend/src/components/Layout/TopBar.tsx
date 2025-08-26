@@ -19,9 +19,53 @@ const TopBar: React.FC = () => {
   };
 
 
-  // Don't render if models haven't loaded yet or if there are no models
-  if (appState.modelsLoading || appState.models.length === 0) {
-    return null;
+  // Don't render if still loading, but show even if no models (could be auth issue)
+  if (appState.modelsLoading) {
+    return (
+      <AppBar 
+        position="static" 
+        color="default" 
+        elevation={1}
+        sx={{ 
+          backgroundColor: 'background.paper',
+          borderBottom: '1px solid',
+          borderBottomColor: 'divider',
+        }}
+      >
+        <Toolbar variant="dense">
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Process Model Workspace
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Loading...
+          </Typography>
+        </Toolbar>
+      </AppBar>
+    );
+  }
+
+  if (appState.models.length === 0) {
+    return (
+      <AppBar 
+        position="static" 
+        color="default" 
+        elevation={1}
+        sx={{ 
+          backgroundColor: 'background.paper',
+          borderBottom: '1px solid',
+          borderBottomColor: 'divider',
+        }}
+      >
+        <Toolbar variant="dense">
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Process Model Workspace
+          </Typography>
+          <Typography variant="body2" color="error">
+            No models available - please check authentication
+          </Typography>
+        </Toolbar>
+      </AppBar>
+    );
   }
 
   return (

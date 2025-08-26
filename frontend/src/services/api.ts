@@ -89,10 +89,48 @@ class ApiService {
   }
 
   async getNodeByCode(code: string, modelKey: string): Promise<ProcessNode> {
-    const response: AxiosResponse<ProcessNode> = await this.apiClient.get(`/nodes/by-code/${code}/`, {
-      params: { model_key: modelKey }
-    });
-    return response.data;
+    try {
+      const response: AxiosResponse<ProcessNode> = await this.apiClient.get(`/nodes/by-code/${code}/`, {
+        params: { model_key: modelKey }
+      });
+      return response.data;
+    } catch (error) {
+      console.log(`Direct lookup failed for code ${code}, trying alternative search...`);
+      // Fallback: search through the tree structure
+      return await this.findNodeByCodeInTree(code, modelKey);
+    }
+  }
+
+  private async findNodeByCodeInTree(code: string, modelKey: string): Promise<ProcessNode> {
+    // Start with root nodes and search recursively
+    const roots = await this.getRoots(modelKey);
+    
+    const searchInNodes = async (nodes: ProcessNode[]): Promise<ProcessNode | null> => {
+      for (const node of nodes) {
+        if (node.code === code) {
+          return node;
+        }
+        
+        // Search in children if not a leaf node
+        if (!node.is_leaf && node.children_count > 0) {
+          try {
+            const children = await this.getChildren(node.id);
+            const found = await searchInNodes(children);
+            if (found) return found;
+          } catch (childError) {
+            console.error(`Failed to load children for node ${node.id}:`, childError);
+          }
+        }
+      }
+      return null;
+    };
+
+    const foundNode = await searchInNodes(roots);
+    if (!foundNode) {
+      throw new Error(`Node with code ${code} not found in tree`);
+    }
+    
+    return foundNode;
   }
 
   // Documents
@@ -154,6 +192,56 @@ class ApiService {
     return response.data.results || response.data;
   }
 
+  async getUsecaseCounts(nodeIds: number[]): Promise<Record<number, number>> {
+    const counts: Record<number, number> = {};
+    
+    if (nodeIds.length === 0) {
+      return counts;
+    }
+
+    console.log(`Getting usecase counts for ${nodeIds.length} nodes...`);
+    
+    // Batch requests in smaller chunks to avoid overwhelming the server
+    const BATCH_SIZE = 5; // Process 5 nodes at a time
+    const batches: number[][] = [];
+    
+    for (let i = 0; i < nodeIds.length; i += BATCH_SIZE) {
+      batches.push(nodeIds.slice(i, i + BATCH_SIZE));
+    }
+
+    // Process batches sequentially to avoid rate limiting
+    for (const batch of batches) {
+      const batchPromises = batch.map(async (nodeId) => {
+        try {
+          const usecases = await this.getUsecasesByNode(nodeId);
+          return { nodeId, count: usecases.length };
+        } catch (error: any) {
+          // Log but don't fail the entire operation
+          console.warn(`Failed to get usecase count for node ${nodeId}:`, error.response?.status || error.message);
+          return { nodeId, count: 0 };
+        }
+      });
+
+      try {
+        const batchResults = await Promise.all(batchPromises);
+        batchResults.forEach(({ nodeId, count }) => {
+          counts[nodeId] = count;
+        });
+        
+        // Small delay between batches to be nice to the server
+        if (batches.indexOf(batch) < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      } catch (error) {
+        console.error('Batch failed:', error);
+        // Continue with next batch even if this one fails
+      }
+    }
+
+    console.log(`Successfully loaded usecase counts for ${Object.keys(counts).length} nodes:`, counts);
+    return counts;
+  }
+
   async saveUsecase(usecase: Partial<NodeUsecaseCandidate>): Promise<NodeUsecaseCandidate> {
     const response: AxiosResponse<NodeUsecaseCandidate> = await this.apiClient.post('/usecases/', usecase);
     return response.data;
@@ -170,6 +258,17 @@ class ApiService {
       params: { model_key: modelKey }
     });
     return response.data;
+  }
+
+  async getBookmarks(modelKey?: string): Promise<{ 
+    id: number; 
+    node: number; 
+    node_code: string; 
+    node_name: string; 
+    created_at: string;
+  }[]> {
+    const response = await this.apiClient.get('/bookmarks/');
+    return response.data.results || response.data;
   }
 
   // Portfolios
@@ -189,6 +288,45 @@ class ApiService {
       params: { model_key: modelKey }
     });
     return response.data.results || response.data;
+  }
+
+  async getDashboardStats(modelKey: string): Promise<{
+    totalUsecaseCandidates: number;
+    totalUsecaseSpecs: number;
+    totalDetailedProcesses: number;
+  }> {
+    try {
+      // Get total usecase candidates
+      const usecasesResponse = await this.apiClient.get('/usecases/', {
+        params: { model_key: modelKey }
+      });
+      const totalUsecaseCandidates = usecasesResponse.data.count || (Array.isArray(usecasesResponse.data.results) ? usecasesResponse.data.results.length : usecasesResponse.data.length);
+
+      // Get total usecase specifications (documents with type 'usecase_specification')
+      const specsResponse = await this.apiClient.get('/documents/', {
+        params: { model_key: modelKey, document_type: 'usecase_specification' }
+      });
+      const totalUsecaseSpecs = specsResponse.data.count || (Array.isArray(specsResponse.data.results) ? specsResponse.data.results.length : specsResponse.data.length);
+
+      // Get total process details (documents with type 'process_details')
+      const processDetailsResponse = await this.apiClient.get('/documents/', {
+        params: { model_key: modelKey, document_type: 'process_details' }
+      });
+      const totalDetailedProcesses = processDetailsResponse.data.count || (Array.isArray(processDetailsResponse.data.results) ? processDetailsResponse.data.results.length : processDetailsResponse.data.length);
+
+      return {
+        totalUsecaseCandidates,
+        totalUsecaseSpecs,
+        totalDetailedProcesses
+      };
+    } catch (error) {
+      console.error('Failed to load dashboard stats:', error);
+      return {
+        totalUsecaseCandidates: 0,
+        totalUsecaseSpecs: 0,
+        totalDetailedProcesses: 0
+      };
+    }
   }
   
   // Expose axios instance for direct API calls
