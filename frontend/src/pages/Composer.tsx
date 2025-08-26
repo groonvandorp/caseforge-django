@@ -5,15 +5,8 @@ import {
   Typography,
   Box,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Card,
   CardContent,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Chip,
   CircularProgress,
   LinearProgress,
@@ -21,23 +14,20 @@ import {
   Divider,
 } from '@mui/material';
 import {
-  ExpandMore,
-  Psychology,
   AutoAwesome,
-  Visibility,
   Delete,
   Description,
-  CheckCircle,
-  PlayArrow,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import SimpleProcessTree from '../components/Process/SimpleProcessTree';
-import { ProcessModel, ProcessNode, NodeDocument, NodeUsecaseCandidate } from '../types';
+import { ProcessNode, NodeDocument, NodeUsecaseCandidate } from '../types';
 import { apiService } from '../services/api';
+import { useAppState } from '../contexts/AppStateContext';
 
 const Composer: React.FC = () => {
-  const [models, setModels] = useState<ProcessModel[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const { state: appState } = useAppState();
+  // Use global model directly instead of local state
+  const selectedModel = appState.selectedModelKey || '';
   const [selectedNode, setSelectedNode] = useState<ProcessNode | null>(null);
   const [processDetails, setProcessDetails] = useState<NodeDocument | null>(null);
   const [nodeDocuments, setNodeDocuments] = useState<NodeDocument[]>([]);
@@ -51,30 +41,14 @@ const Composer: React.FC = () => {
   const [loadingUsecases, setLoadingUsecases] = useState(false);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
 
-  useEffect(() => {
-    loadModels();
-  }, []);
 
+  // Reset state when model changes
   useEffect(() => {
-    if (selectedNode) {
-      loadNodeData();
-    }
-  }, [selectedNode]);
-
-  const loadModels = async () => {
-    try {
-      const modelsData = await apiService.getModels();
-      setModels(modelsData);
-      if (modelsData.length > 0) {
-        // Prefer apqc_pcf if available, otherwise use first model
-        const preferredModel = modelsData.find(m => m.model_key === 'apqc_pcf');
-        const selectedModelKey = preferredModel?.model_key || modelsData[0].model_key;
-        setSelectedModel(selectedModelKey);
-      }
-    } catch (error) {
-      console.error('Failed to load models:', error);
-    }
-  };
+    setSelectedNode(null);
+    setProcessDetails(null);
+    setNodeDocuments([]);
+    setUsecaseCandidates([]);
+  }, [appState.selectedModelKey]);
 
   const loadNodeData = useCallback(async () => {
     if (!selectedNode) return;
@@ -100,13 +74,12 @@ const Composer: React.FC = () => {
     }
   }, [selectedNode]);
 
-  const handleModelChange = (event: any) => {
-    setSelectedModel(event.target.value);
-    setSelectedNode(null);
-    setProcessDetails(null);
-    setNodeDocuments([]);
-    setUsecaseCandidates([]);
-  };
+  useEffect(() => {
+    if (selectedNode) {
+      loadNodeData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNode]);
 
   const handleNodeSelect = async (node: ProcessNode) => {
     try {
@@ -337,19 +310,6 @@ const Composer: React.FC = () => {
     );
   };
 
-  const handleViewOrGenerateSpec = async (candidate: NodeUsecaseCandidate) => {
-    const existingSpec = findSpecDocument(candidate);
-    
-    if (existingSpec) {
-      // View existing specification in Viewer
-      // TODO: Open in Viewer tab/modal
-      console.log('Opening specification in viewer:', existingSpec);
-      alert(`Opening specification: ${existingSpec.title}`);
-    } else {
-      // Generate new specification
-      await handleGenerateSpec(candidate);
-    }
-  };
 
   return (
     <Container maxWidth="xl">
@@ -358,20 +318,6 @@ const Composer: React.FC = () => {
           AI Use Case Composer
         </Typography>
         
-        <FormControl sx={{ minWidth: 300, mb: 3 }}>
-          <InputLabel>Process Model</InputLabel>
-          <Select
-            value={selectedModel}
-            onChange={handleModelChange}
-            label="Process Model"
-          >
-            {models.map((model) => (
-              <MenuItem key={model.id} value={model.model_key}>
-                {model.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
       </Box>
 
       <Box sx={{ display: 'flex', gap: 2 }}>
@@ -403,66 +349,38 @@ const Composer: React.FC = () => {
               </Typography>
             ) : (
               <Box>
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Code
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {selectedNode.code}
-                  </Typography>
-                </Box>
-                
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Name
-                  </Typography>
-                  <Typography variant="body1">
-                    {selectedNode.name}
-                  </Typography>
-                </Box>
-                
-                
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Description
-                  </Typography>
-                  {selectedNode.description ? (
-                    <Typography variant="body2">
+                {/* Compact Header Section */}
+                <Box sx={{ mb: 2, p: 2, backgroundColor: 'action.hover', borderRadius: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1 }}>
+                    <Box sx={{ flex: 1, mr: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                        {selectedNode.code}
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        {selectedNode.name}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                      <Chip 
+                        label={`Level ${selectedNode.level}`} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined"
+                      />
+                      <Chip 
+                        label={selectedNode.is_leaf ? 'Leaf Node' : 'Parent Node'} 
+                        size="small" 
+                        color={selectedNode.is_leaf ? 'success' : 'info'}
+                        variant="outlined"
+                      />
+                    </Box>
+                  </Box>
+                  
+                  {selectedNode.description && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.4 }}>
                       {selectedNode.description}
                     </Typography>
-                  ) : (
-                    <Typography variant="body2" color="text.disabled">
-                      No description available (DEBUG: {JSON.stringify({
-                        hasDesc: !!selectedNode.description,
-                        descLength: selectedNode.description?.length || 0,
-                        descValue: selectedNode.description || 'null'
-                      })})
-                    </Typography>
                   )}
-                </Box>
-                
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Level
-                  </Typography>
-                  <Chip 
-                    label={`Level ${selectedNode.level}`} 
-                    size="small" 
-                    color="primary" 
-                    variant="outlined"
-                  />
-                </Box>
-                
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Type
-                  </Typography>
-                  <Chip 
-                    label={selectedNode.is_leaf ? 'Leaf Node' : 'Parent Node'} 
-                    size="small" 
-                    color={selectedNode.is_leaf ? 'success' : 'info'}
-                    variant="outlined"
-                  />
                 </Box>
 
                 {/* Process Details Actions - only for leaf nodes */}

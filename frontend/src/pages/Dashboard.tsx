@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Paper,
@@ -13,10 +13,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Chip,
 } from '@mui/material';
 import {
@@ -25,50 +21,27 @@ import {
   Delete,
   Star,
 } from '@mui/icons-material';
-import { ProcessModel, NodeDocument } from '../types';
+import { NodeDocument } from '../types';
 import { apiService } from '../services/api';
+import { useAppState } from '../contexts/AppStateContext';
 
 const Dashboard: React.FC = () => {
-  const [models, setModels] = useState<ProcessModel[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const { state: appState } = useAppState();
   const [specifications, setSpecifications] = useState<NodeDocument[]>([]);
   const [recentProcessDetails, setRecentProcessDetails] = useState<NodeDocument[]>([]);
   const [bookmarkCounts, setBookmarkCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadModels();
-  }, []);
 
-  useEffect(() => {
-    if (selectedModel) {
-      loadDashboardData();
-    }
-  }, [selectedModel]);
-
-  const loadModels = async () => {
-    try {
-      console.log('Loading models...');
-      const modelsData = await apiService.getModels();
-      console.log('Models data received:', modelsData);
-      setModels(modelsData);
-      if (modelsData.length > 0) {
-        setSelectedModel(modelsData[0].model_key);
-      }
-    } catch (error) {
-      console.error('Failed to load models:', error);
-    }
-  };
-
-  const loadDashboardData = async () => {
-    if (!selectedModel) return;
+  const loadDashboardData = useCallback(async () => {
+    if (!appState.selectedModelKey) return;
     
     try {
       setLoading(true);
       const [specsData, processDetailsData, bookmarkCountsData] = await Promise.all([
-        apiService.getDashboardSpecs(selectedModel),
-        apiService.api.get('/documents/', { params: { model_key: selectedModel, document_type: 'process_details' } }).then(res => res.data.results || res.data),
-        apiService.getBookmarkCounts(selectedModel),
+        apiService.getDashboardSpecs(appState.selectedModelKey),
+        apiService.api.get('/documents/', { params: { model_key: appState.selectedModelKey, document_type: 'process_details' } }).then(res => res.data.results || res.data),
+        apiService.getBookmarkCounts(appState.selectedModelKey),
       ]);
       
       setSpecifications(specsData);
@@ -79,11 +52,15 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [appState.selectedModelKey]);
 
-  const handleModelChange = (event: any) => {
-    setSelectedModel(event.target.value);
-  };
+  useEffect(() => {
+    if (appState.selectedModelKey) {
+      loadDashboardData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appState.selectedModelKey]);
+
 
   const handleViewSpec = (spec: NodeDocument) => {
     // Navigate to viewer with spec ID
@@ -166,20 +143,6 @@ const Dashboard: React.FC = () => {
           Dashboard
         </Typography>
         
-        <FormControl sx={{ minWidth: 300, mb: 3 }}>
-          <InputLabel>Process Model</InputLabel>
-          <Select
-            value={selectedModel}
-            onChange={handleModelChange}
-            label="Process Model"
-          >
-            {models.map((model) => (
-              <MenuItem key={model.id} value={model.model_key}>
-                {model.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
       </Box>
 
       <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 4 }}>

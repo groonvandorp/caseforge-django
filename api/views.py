@@ -149,15 +149,49 @@ class ProcessNodeViewSet(ModelViewSet):
             model_version__model__model_key=model_key,
             model_version__is_current=True,
             parent__isnull=True
-        ).order_by('display_order', 'name')
+        )
         
-        serializer = ProcessNodeTreeSerializer(roots, many=True)
+        # Custom sorting for process codes - convert to list and sort in Python
+        roots_list = list(roots)
+        
+        def sort_key(node):
+            # Try to extract numeric part from code for proper sorting
+            try:
+                # For codes like "1.0", "10.0", "5.0" - extract the first number
+                import re
+                match = re.match(r'^(\d+(?:\.\d+)?)', node.code)
+                if match:
+                    return float(match.group(1))
+                else:
+                    # Fall back to string sorting for non-numeric codes
+                    return float('inf')  # Put non-numeric codes at the end
+            except (ValueError, AttributeError):
+                return float('inf')  # Put problematic codes at the end
+        
+        roots_list.sort(key=sort_key)
+        
+        serializer = ProcessNodeTreeSerializer(roots_list, many=True)
         return Response(serializer.data)
     
     @action(detail=True, methods=['get'])
     def children(self, request, pk=None):
         node = self.get_object()
-        children = node.children.order_by('display_order', 'name')
+        children = list(node.children.all())
+        
+        # Custom sorting for process codes
+        def sort_key(node):
+            try:
+                import re
+                match = re.match(r'^(\d+(?:\.\d+)?)', node.code)
+                if match:
+                    return float(match.group(1))
+                else:
+                    return float('inf')
+            except (ValueError, AttributeError):
+                return float('inf')
+        
+        children.sort(key=sort_key)
+        
         serializer = ProcessNodeSerializer(children, many=True)
         return Response(serializer.data)
     
