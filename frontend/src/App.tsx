@@ -3,7 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box } from '@mui/material';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AppStateProvider } from './contexts/AppStateContext';
+import { ComposerStateProvider } from './contexts/ComposerStateContext';
 import Header from './components/Layout/Header';
+import TopBar from './components/Layout/TopBar';
 import TabNavigation from './components/Navigation/TabNavigation';
 import Login from './components/Auth/Login';
 import Signup from './components/Auth/Signup';
@@ -37,6 +40,7 @@ const AppContent: React.FC = () => {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: 'grey.50' }}>
       {isAuthenticated && <Header />}
+      {isAuthenticated && <TopBar />}
       
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -97,9 +101,13 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <AppStateProvider>
+          <ComposerStateProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </ComposerStateProvider>
+        </AppStateProvider>
       </AuthProvider>
     </ThemeProvider>
   );

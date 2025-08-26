@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   List,
   ListItem,
@@ -27,49 +27,66 @@ interface SimpleProcessTreeProps {
   modelKey: string;
   onNodeSelect: (node: ProcessNode) => void;
   selectedNodeId?: number;
+  expandedNodeIds?: number[];
+  onExpandedNodesChange?: (nodeIds: number[]) => void;
 }
 
 const SimpleProcessTree: React.FC<SimpleProcessTreeProps> = ({ 
   modelKey, 
   onNodeSelect, 
-  selectedNodeId 
+  selectedNodeId,
+  expandedNodeIds = [],
+  onExpandedNodesChange
 }) => {
   const [treeData, setTreeData] = useState<ProcessNode[]>([]);
-  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
+  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set(expandedNodeIds));
   const [bookmarkCounts, setBookmarkCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
+  // Sync with external expandedNodeIds prop
   useEffect(() => {
-    if (modelKey) {
-      loadRootNodes();
-      loadBookmarkCounts();
+    if (expandedNodeIds && expandedNodeIds.length > 0) {
+      setExpandedNodes(new Set(expandedNodeIds));
     }
-  }, [modelKey]);
+  }, [expandedNodeIds]);
 
-  const loadRootNodes = useCallback(async () => {
-    try {
-      setLoading(true);
-      const roots = await apiService.getRoots(modelKey);
-      setTreeData(roots);
-    } catch (error) {
-      console.error('Failed to load root nodes:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [modelKey]);
+  useEffect(() => {
+    if (!modelKey) return;
 
-  const loadBookmarkCounts = useCallback(async () => {
-    try {
-      const counts = await apiService.getBookmarkCounts(modelKey);
-      setBookmarkCounts(counts);
-    } catch (error) {
-      console.error('Failed to load bookmark counts:', error);
-    }
+    let isMounted = true;
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [roots, counts] = await Promise.all([
+          apiService.getRoots(modelKey),
+          apiService.getBookmarkCounts(modelKey)
+        ]);
+        
+        if (isMounted) {
+          setTreeData(roots);
+          setBookmarkCounts(counts);
+        }
+      } catch (error) {
+        console.error('Failed to load tree data:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [modelKey]);
 
   const handleToggle = async (node: ProcessNode) => {
     const isExpanded = expandedNodes.has(node.id);
     const newExpanded = new Set(expandedNodes);
+    
     
     if (isExpanded) {
       newExpanded.delete(node.id);
@@ -91,7 +108,7 @@ const SimpleProcessTree: React.FC<SimpleProcessTreeProps> = ({
               return n;
             });
           };
-          setTreeData(updateNodeChildren(treeData));
+          setTreeData(prevTreeData => updateNodeChildren(prevTreeData));
         } catch (error) {
           console.error('Failed to load children:', error);
         }
@@ -99,6 +116,11 @@ const SimpleProcessTree: React.FC<SimpleProcessTreeProps> = ({
     }
     
     setExpandedNodes(newExpanded);
+    
+    // Notify parent component about expansion change
+    if (onExpandedNodesChange) {
+      onExpandedNodesChange(Array.from(newExpanded));
+    }
   };
 
   const handleNodeClick = (node: ProcessNode) => {

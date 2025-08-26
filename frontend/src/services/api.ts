@@ -78,6 +78,11 @@ class ApiService {
     return response.data.results || response.data;
   }
 
+  async getNode(nodeId: number): Promise<ProcessNode> {
+    const response: AxiosResponse<ProcessNode> = await this.apiClient.get(`/nodes/${nodeId}/`);
+    return response.data;
+  }
+
   async getChildren(nodeId: number): Promise<ProcessNode[]> {
     const response = await this.apiClient.get(`/nodes/${nodeId}/children/`);
     return response.data.results || response.data;
