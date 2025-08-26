@@ -1,0 +1,94 @@
+{% extends "admin/index.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+.system-health-widget {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.system-health-widget h3 {
+    margin-top: 0;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.health-status {
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+.health-actions {
+    margin-top: 10px;
+}
+
+.health-actions a {
+    background: #007cba;
+    color: white;
+    padding: 6px 12px;
+    text-decoration: none;
+    border-radius: 3px;
+    margin-right: 10px;
+    font-size: 0.9em;
+}
+
+.health-actions a:hover {
+    background: #005a87;
+}
+
+.refresh-health {
+    background: #28a745 !important;
+}
+
+.refresh-health:hover {
+    background: #1e7e34 !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="system-health-widget">
+    <h3>
+        System Status
+        <span class="health-status" id="healthStatus">{{ worker_health|default:"Loading..." }}</span>
+    </h3>
+    <div class="health-actions">
+        <a href="{% url 'admin:system_status' %}" class="button">📊 Full Status Dashboard</a>
+        <a href="#" onclick="refreshHealth()" class="refresh-health">🔄 Refresh</a>
+        <small style="margin-left: 10px; color: #666;" id="lastCheck">Last checked: {{ request.timestamp|date:"H:i:s" }}</small>
+    </div>
+</div>
+
+{{ block.super }}
+
+<script>
+function refreshHealth() {
+    const statusElement = document.getElementById('healthStatus');
+    const lastCheckElement = document.getElementById('lastCheck');
+    
+    statusElement.textContent = 'Checking...';
+    
+    fetch('{% url "admin:worker_health_api" %}')
+        .then(response => response.json())
+        .then(data => {
+            statusElement.textContent = data.health;
+            lastCheckElement.textContent = 'Last checked: ' + new Date().toLocaleTimeString();
+        })
+        .catch(error => {
+            statusElement.textContent = '❌ Failed to check status';
+            console.error('Health check failed:', error);
+        });
+}
+
+// Auto-refresh health status every 60 seconds
+setInterval(refreshHealth, 60000);
+</script>
+{% endblock %}
