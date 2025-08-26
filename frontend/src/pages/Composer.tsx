@@ -431,19 +431,45 @@ const Composer: React.FC = () => {
                   />
                 </Box>
 
-                {/* Generate Process Details Button - only for leaf nodes */}
+                {/* Process Details Actions - only for leaf nodes */}
                 {selectedNode.is_leaf && (
                   <Box sx={{ mb: 3 }}>
-                    <Button
-                      variant="contained"
-                      startIcon={<AutoAwesome />}
-                      onClick={handleGenerateDetails}
-                      disabled={loadingDetails}
-                      fullWidth
-                      sx={{ mb: 1 }}
-                    >
-                      {loadingDetails ? 'Generating...' : 'Generate Process Details'}
-                    </Button>
+                    {!processDetails ? (
+                      // Show generate button if no process details exist
+                      <Button
+                        variant="contained"
+                        startIcon={<AutoAwesome />}
+                        onClick={handleGenerateDetails}
+                        disabled={loadingDetails}
+                        fullWidth
+                        sx={{ mb: 1 }}
+                      >
+                        {loadingDetails ? 'Generating...' : 'Generate Process Details'}
+                      </Button>
+                    ) : (
+                      // Show both regenerate and delete buttons if process details exist
+                      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                        <Button
+                          variant="contained"
+                          startIcon={<AutoAwesome />}
+                          onClick={handleGenerateDetails}
+                          disabled={loadingDetails}
+                          sx={{ flex: 1 }}
+                        >
+                          {loadingDetails ? 'Regenerating...' : 'Regenerate Details'}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<Delete />}
+                          onClick={handleDeleteProcessDetails}
+                          disabled={loadingDetails}
+                          sx={{ minWidth: '120px' }}
+                        >
+                          Delete
+                        </Button>
+                      </Box>
+                    )}
                     
                     {/* Progress indicator */}
                     {taskProgress && (
@@ -474,26 +500,10 @@ const Composer: React.FC = () => {
                   <>
                     {processDetails && (
                       <Box sx={{ mb: 3 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Description fontSize="small" />
-                            Process Details
-                          </Typography>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            color="error"
-                            startIcon={<Delete fontSize="small" />}
-                            onClick={handleDeleteProcessDetails}
-                            sx={{ 
-                              fontSize: '0.75rem',
-                              height: '28px',
-                              minWidth: '100px'
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </Box>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Description fontSize="small" />
+                          Process Details
+                        </Typography>
                         <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
                           <CardContent>
                             <Box sx={{ 
