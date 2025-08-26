@@ -52,7 +52,10 @@ class OpenAIService:
         logger.info(f"🤖 [PROCESS_DETAILS] Prompt length: {len(prompt)} characters")
         logger.info(f"🤖 [PROCESS_DETAILS] Full prompt:\n{'-'*80}\n{prompt}\n{'-'*80}")
         
-        system_message = "You are a business process expert. Generate detailed process information in JSON format."
+        system_message = ("You are a process modeling expert. Compose a clean, accurate, and practical process description. "
+                         "Ground your answer in the provided context (ancestors, children, siblings/cousins, nearest neighbors, optional branch subtree). "
+                         "If cross-category dependencies are plausible, include them explicitly with reasons. "
+                         "Respond ONLY with valid JSON for the given schema. Keep it concise and business-focused. Return JSON only.")
         messages = [
             {"role": "system", "content": system_message},
             {"role": "user", "content": prompt}
@@ -61,15 +64,15 @@ class OpenAIService:
         logger.info(f"🤖 [PROCESS_DETAILS] System message: {system_message}")
         logger.info(f"🤖 [PROCESS_DETAILS] Messages structure: {len(messages)} messages")
         
-        # Making OpenAI call with temperature for better, more creative results
-        logger.info("🤖 [PROCESS_DETAILS] Making OpenAI call with temperature=0.7...")
+        # Making OpenAI call (no temperature parameter to avoid model restrictions)
+        logger.info("🤖 [PROCESS_DETAILS] Making OpenAI call...")
         
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                response_format={"type": "json_object"},
-                temperature=0.7  # Balanced creativity vs consistency
+                response_format={"type": "json_object"}
+                # No temperature - use model default
             )
             
             logger.info("🤖 [PROCESS_DETAILS] ✅ OpenAI call successful")
@@ -120,14 +123,14 @@ class OpenAIService:
         ]
         
         logger.info(f"🤖 [USECASE_CANDIDATES] System message: {system_message}")
-        logger.info(f"🤖 [USECASE_CANDIDATES] Making OpenAI call with temperature=0.8...")
+        logger.info(f"🤖 [USECASE_CANDIDATES] Making OpenAI call...")
         
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                response_format={"type": "json_object"},
-                temperature=0.8  # Higher for more creative use case ideas
+                response_format={"type": "json_object"}
+                # No temperature - use model default
             )
             
             logger.info(f"🤖 [USECASE_CANDIDATES] ✅ OpenAI call successful")
@@ -168,13 +171,13 @@ class OpenAIService:
         ]
         
         logger.info(f"🤖 [USECASE_SPEC] System message: {system_message}")
-        logger.info(f"🤖 [USECASE_SPEC] Making OpenAI call with temperature=0.6...")
+        logger.info(f"🤖 [USECASE_SPEC] Making OpenAI call...")
         
         try:
             response = await self.client.chat.completions.create(
                 model=self.model,
-                messages=messages,
-                temperature=0.6  # Lower for more focused specifications
+                messages=messages
+                # No temperature - use model default
             )
             
             logger.info(f"🤖 [USECASE_SPEC] ✅ OpenAI call successful")
@@ -227,34 +230,98 @@ class OpenAIService:
             raise
     
     def _build_process_details_prompt(self, node: ProcessNode, context: Dict[str, Any]) -> str:
-        siblings = context.get('siblings', [])
-        related = context.get('related', [])
+        """Build comprehensive prompt matching old system's richness"""
+        import json
         
-        prompt = f"""
-        Analyze this business process and provide detailed information:
+        # Build the user request object matching old system
+        user_request = {
+            "task": "Compose a complete process description for the node.",
+            "node": context.get("node"),
+            "ancestors": context.get("ancestors", []),
+            "children": context.get("children", []),
+            "attributes": context.get("attributes", []),
+            "candidates": {
+                "siblings": context.get("siblings", []),
+                "cousins": context.get("cousins", []),
+                "nearest_neighbors": context.get("nearest_neighbors", [])
+            },
+            "guidance": {
+                "allow_cross_category": context.get("cross_category", False),
+                "note": "Consider cross-category flows (e.g., purchase -> warranty claim) when relevant."
+            },
+            "branch_context": context.get("branch_context", []),
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "overview": {"type": "string"},
+                    "inputs": {"type": "array", "items": {"type": "string"}},
+                    "outputs": {"type": "array", "items": {"type": "string"}},
+                    "kpis": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "description": {"type": "string"},
+                                "formula": {"type": "string"},
+                                "data_requirements": {"type": "array", "items": {"type": "string"}}
+                            }
+                        }
+                    },
+                    "upstream_processes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "code": {"type": "string"},
+                                "name": {"type": "string"},
+                                "reason": {"type": "string"}
+                            }
+                        }
+                    },
+                    "downstream_processes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "code": {"type": "string"},
+                                "name": {"type": "string"},
+                                "reason": {"type": "string"}
+                            }
+                        }
+                    },
+                    "related_processes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "code": {"type": "string"},
+                                "name": {"type": "string"},
+                                "reason": {"type": "string"}
+                            }
+                        }
+                    },
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "number": {"type": "integer"},
+                                "name": {"type": "string"},
+                                "description": {"type": "string"}
+                            }
+                        }
+                    },
+                    "challenges": {"type": "array", "items": {"type": "string"}},
+                    "best_practices": {"type": "array", "items": {"type": "string"}}
+                },
+                "required": ["title", "overview", "inputs", "outputs"]
+            }
+        }
         
-        Process: {node.code} - {node.name}
-        Description: {node.description or 'No description available'}
-        Level: {node.level}
-        
-        Context:
-        - Sibling processes: {', '.join([f"{s['code']}: {s['name']}" for s in siblings[:5]])}
-        - Related processes: {', '.join([f"{r['code']}: {r['name']}" for r in related[:5]])}
-        
-        Generate a JSON response with:
-        {{
-            "summary": "Brief overview of the process",
-            "inputs": ["list of typical inputs"],
-            "outputs": ["list of typical outputs"],
-            "kpis": ["key performance indicators"],
-            "steps": ["detailed process steps"],
-            "upstream_processes": ["processes that feed into this one"],
-            "downstream_processes": ["processes that this feeds into"],
-            "challenges": ["common challenges and pain points"],
-            "best_practices": ["industry best practices"]
-        }}
-        """
-        return prompt
+        # Convert to JSON string for the prompt
+        return json.dumps(user_request, indent=2)
     
     def _build_usecase_prompt(self, node: ProcessNode, context: Dict[str, Any]) -> str:
         prompt = f"""
@@ -304,42 +371,104 @@ class OpenAIService:
 class ContextService:
     @staticmethod
     def get_process_context(node: ProcessNode, include_branch: bool = False, cross_category: bool = False) -> Dict[str, Any]:
-        """Get contextual information for a process node"""
+        """Get comprehensive contextual information for a process node (matching old system)"""
+        logger.info(f"📊 [CONTEXT] Gathering context for node: {node.code}")
+        logger.info(f"📊 [CONTEXT] Include branch: {include_branch}, Cross category: {cross_category}")
+        
         context = {
+            'node': {
+                'id': node.id,
+                'code': node.code,
+                'name': node.name,
+                'description': node.description,
+                'level': node.level,
+                'parent_id': node.parent_id if node.parent else None
+            },
+            'attributes': [],
+            'ancestors': [],
+            'children': [],
             'siblings': [],
-            'related': [],
-            'nearest_neighbors': []
+            'cousins': [],
+            'nearest_neighbors': [],
+            'branch_context': []
         }
         
-        # Get siblings
+        # Get node attributes
+        attributes = node.attributes.all().values('key', 'value')
+        context['attributes'] = list(attributes)
+        logger.info(f"📊 [CONTEXT] Found {len(context['attributes'])} attributes")
+        
+        # Get ancestors (full chain from root to node)
+        ancestors = []
+        current = node.parent
+        while current:
+            ancestors.append({
+                'id': current.id,
+                'code': current.code,
+                'name': current.name,
+                'level': current.level
+            })
+            current = current.parent
+        context['ancestors'] = list(reversed(ancestors))  # Root to node order
+        logger.info(f"📊 [CONTEXT] Found {len(context['ancestors'])} ancestors")
+        
+        # Get children
+        children = node.children.all().values('code', 'name', 'description')
+        context['children'] = list(children)
+        logger.info(f"📊 [CONTEXT] Found {len(context['children'])} children")
+        
+        # Get siblings (same parent, excluding self)
         if node.parent:
             siblings = ProcessNode.objects.filter(
                 parent=node.parent,
                 model_version=node.model_version
-            ).exclude(id=node.id).values('code', 'name', 'description')
+            ).exclude(id=node.id).values('code', 'name', 'description')[:25]
             context['siblings'] = list(siblings)
+            
+            # Get cousins (children of parent's siblings)
+            if node.parent.parent:  # Node has grandparent
+                aunts_uncles = ProcessNode.objects.filter(
+                    parent=node.parent.parent,
+                    model_version=node.model_version
+                ).exclude(id=node.parent_id)
+                
+                cousins = ProcessNode.objects.filter(
+                    parent__in=aunts_uncles,
+                    level=node.level,
+                    model_version=node.model_version
+                ).values('code', 'name', 'description')[:25]
+                context['cousins'] = list(cousins)
         
-        # Get related processes through embeddings
+        # Get nearest neighbors through embeddings (up to 60)
         if hasattr(node, 'embedding'):
-            similar_nodes = ContextService._find_similar_nodes(node, limit=10)
+            similar_nodes = ContextService._find_similar_nodes(node, limit=60)
             context['nearest_neighbors'] = similar_nodes
+            
+            # Diversify neighbors if cross_category is True
+            if cross_category and similar_nodes:
+                context['nearest_neighbors'] = ContextService._diversify_neighbors(similar_nodes, max_total=30)
         
-        # Branch context (L2 subtree)
+        # Branch context (entire L2 subtree)
         if include_branch and node.level >= 2:
             l2_ancestor = ContextService._get_l2_ancestor(node)
             if l2_ancestor:
                 branch_nodes = ProcessNode.objects.filter(
                     model_version=node.model_version,
                     materialized_path__startswith=l2_ancestor.materialized_path
-                ).exclude(id=node.id).values('code', 'name', 'description')
+                ).exclude(id=node.id).order_by('level', 'display_order').values('code', 'name', 'description', 'level')
                 context['branch_context'] = list(branch_nodes)
+        
+        # Log summary
+        logger.info(f"📊 [CONTEXT] Context summary: {len(context['siblings'])} siblings, "
+                   f"{len(context['cousins'])} cousins, {len(context['nearest_neighbors'])} neighbors, "
+                   f"{len(context['branch_context'])} branch nodes")
         
         return context
     
     @staticmethod
     def _find_similar_nodes(node: ProcessNode, limit: int = 10) -> List[Dict[str, Any]]:
         """Find similar nodes using embedding similarity"""
-        # This would implement cosine similarity search
+        # TODO: Implement proper cosine similarity search when embeddings are available
         # For now, return related nodes by parent relationship
         if node.parent:
             related = ProcessNode.objects.filter(
@@ -348,6 +477,26 @@ class ContextService:
             ).exclude(id=node.id).values('code', 'name', 'description')[:limit]
             return list(related)
         return []
+    
+    @staticmethod
+    def _diversify_neighbors(neighbors: List[Dict], max_total: int = 30, max_per_prefix: int = 5) -> List[Dict]:
+        """Diversify neighbors to include cross-category processes"""
+        from collections import defaultdict
+        
+        # Group by L1 prefix (e.g., "1", "2", "3")
+        grouped = defaultdict(list)
+        for n in neighbors:
+            prefix = n['code'].split('.')[0]
+            grouped[prefix].append(n)
+        
+        # Take up to max_per_prefix from each group
+        diversified = []
+        for prefix in sorted(grouped.keys()):
+            diversified.extend(grouped[prefix][:max_per_prefix])
+            if len(diversified) >= max_total:
+                break
+        
+        return diversified[:max_total]
     
     @staticmethod
     def _get_l2_ancestor(node: ProcessNode) -> ProcessNode:

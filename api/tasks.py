@@ -22,7 +22,12 @@ def generate_process_details_task(self, user_id: int, node_id: int, include_bran
         )
         
         user = User.objects.get(id=user_id)
-        node = ProcessNode.objects.get(id=node_id)
+        # Fetch node with all relationships for rich context
+        node = ProcessNode.objects.select_related(
+            'parent', 'parent__parent', 'model_version'
+        ).prefetch_related(
+            'children', 'attributes'
+        ).get(id=node_id)
         
         # Update status: Getting context
         self.update_state(
@@ -74,7 +79,58 @@ def generate_process_details_task(self, user_id: int, node_id: int, include_bran
                 'best_practices': ['Industry best practices to be researched and applied']
             }
         
+        # Helper function to format structured data
+        def format_kpis(kpis):
+            if not kpis:
+                return "No KPIs defined"
+            formatted = []
+            for kpi in kpis:
+                if isinstance(kpi, dict):
+                    formatted.append(f"**{kpi.get('name', 'Unnamed KPI')}**")
+                    formatted.append(f"  - Description: {kpi.get('description', 'N/A')}")
+                    if 'formula' in kpi:
+                        formatted.append(f"  - Formula: `{kpi['formula']}`")
+                    if 'data_requirements' in kpi and kpi['data_requirements']:
+                        formatted.append(f"  - Data Requirements: {', '.join(kpi['data_requirements'])}")
+                    formatted.append("")
+                else:
+                    formatted.append(f"- {kpi}")
+            return chr(10).join(formatted)
+
+        def format_steps(steps):
+            if not steps:
+                return "No steps defined"
+            formatted = []
+            for i, step in enumerate(steps):
+                if isinstance(step, dict):
+                    step_num = step.get('number', i+1)
+                    step_name = step.get('name', f'Step {step_num}')
+                    step_desc = step.get('description', 'No description')
+                    formatted.append(f"{step_num}. **{step_name}**: {step_desc}")
+                else:
+                    formatted.append(f"{i+1}. {step}")
+            return chr(10).join(formatted)
+
+        def format_processes(processes, label="Process"):
+            if not processes:
+                return f"No {label.lower()}es defined"
+            formatted = []
+            for process in processes:
+                if isinstance(process, dict):
+                    code = process.get('code', 'N/A')
+                    name = process.get('name', 'Unnamed Process')
+                    reason = process.get('reason', '')
+                    if reason:
+                        formatted.append(f"- **{code}** - {name}: {reason}")
+                    else:
+                        formatted.append(f"- **{code}** - {name}")
+                else:
+                    formatted.append(f"- {process}")
+            return chr(10).join(formatted)
+
         # Create comprehensive markdown content
+        summary = details.get('summary') or details.get('overview', 'Process summary to be developed')
+        
         markdown_content = f"""# Process Details: {node.name}
 
 **Process Code:** {node.code}
@@ -82,7 +138,7 @@ def generate_process_details_task(self, user_id: int, node_id: int, include_bran
 **Description:** {node.description or 'No description available'}
 
 ## Summary
-{details.get('summary', 'Process summary to be developed')}
+{summary}
 
 ## Process Inputs
 {chr(10).join(f"- {input_item}" for input_item in details.get('inputs', []))}
@@ -91,16 +147,16 @@ def generate_process_details_task(self, user_id: int, node_id: int, include_bran
 {chr(10).join(f"- {output}" for output in details.get('outputs', []))}
 
 ## Key Performance Indicators
-{chr(10).join(f"- {kpi}" for kpi in details.get('kpis', []))}
+{format_kpis(details.get('kpis', []))}
 
 ## Process Steps
-{chr(10).join(f"{i+1}. {step}" for i, step in enumerate(details.get('steps', [])))}
+{format_steps(details.get('steps', []))}
 
 ## Upstream Processes
-{chr(10).join(f"- {process}" for process in details.get('upstream_processes', []))}
+{format_processes(details.get('upstream_processes', []), 'Upstream Process')}
 
 ## Downstream Processes
-{chr(10).join(f"- {process}" for process in details.get('downstream_processes', []))}
+{format_processes(details.get('downstream_processes', []), 'Downstream Process')}
 
 ## Common Challenges
 {chr(10).join(f"- {challenge}" for challenge in details.get('challenges', []))}
@@ -147,7 +203,12 @@ def generate_usecase_candidates_task(user_id: int, node_id: int, include_branch:
     """Async task to generate AI use case candidates"""
     try:
         user = User.objects.get(id=user_id)
-        node = ProcessNode.objects.get(id=node_id)
+        # Fetch node with all relationships for rich context
+        node = ProcessNode.objects.select_related(
+            'parent', 'parent__parent', 'model_version'
+        ).prefetch_related(
+            'children', 'attributes'
+        ).get(id=node_id)
         
         # Get context
         context = ContextService.get_process_context(node, include_branch, cross_category)
