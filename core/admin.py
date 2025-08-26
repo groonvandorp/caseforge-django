@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth import get_user_model
+from django.contrib import messages
 from django.urls import path
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -45,13 +46,43 @@ class ProcessModelVersionAdmin(admin.ModelAdmin):
 
 @admin.register(ProcessNode)
 class ProcessNodeAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'level', 'model_version', 'parent']
+    list_display = ['code', 'name', 'level', 'model_version', 'parent', 'has_process_details']
     list_filter = ['level', 'model_version__model__name']
     search_fields = ['code', 'name', 'description']
     raw_id_fields = ['parent']
+    actions = ['delete_node_process_details']
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('model_version__model', 'parent')
+    
+    @admin.display(boolean=True, description='Has Process Details')
+    def has_process_details(self, obj):
+        return NodeDocument.objects.filter(node=obj, document_type='process_details').exists()
+    
+    @admin.action(description='Delete process details for selected nodes')
+    def delete_node_process_details(self, request, queryset):
+        deleted_count = 0
+        deleted_nodes = []
+        
+        for node in queryset:
+            process_details = NodeDocument.objects.filter(node=node, document_type='process_details')
+            if process_details.exists():
+                process_details.delete()
+                deleted_count += 1
+                deleted_nodes.append(f"{node.code} ({node.name})")
+        
+        if deleted_count == 0:
+            self.message_user(request, "No process details documents found for the selected nodes.", messages.WARNING)
+            return
+        
+        if deleted_count == 1:
+            message = f"Successfully deleted process details document for node {deleted_nodes[0]}"
+        else:
+            message = f"Successfully deleted process details documents for {deleted_count} nodes: {', '.join(deleted_nodes[:3])}"
+            if len(deleted_nodes) > 3:
+                message += f" and {len(deleted_nodes) - 3} more"
+        
+        self.message_user(request, message, messages.SUCCESS)
 
 
 @admin.register(NodeDocument)
@@ -61,6 +92,31 @@ class NodeDocumentAdmin(admin.ModelAdmin):
     search_fields = ['title', 'node__code', 'node__name', 'user__username']
     raw_id_fields = ['node', 'user']
     readonly_fields = ['created_at', 'updated_at']
+    actions = ['delete_process_details']
+    
+    @admin.action(description='Delete selected process details documents')
+    def delete_process_details(self, request, queryset):
+        process_details = queryset.filter(document_type='process_details')
+        deleted_count = process_details.count()
+        
+        if deleted_count == 0:
+            self.message_user(request, "No process details documents were selected.", messages.WARNING)
+            return
+        
+        # Store info about what we're deleting for the message
+        deleted_info = list(process_details.values_list('node__code', 'node__name'))
+        
+        # Delete the documents
+        process_details.delete()
+        
+        # Create a detailed message
+        if deleted_count == 1:
+            node_code, node_name = deleted_info[0]
+            message = f"Successfully deleted process details document for node {node_code} ({node_name})"
+        else:
+            message = f"Successfully deleted {deleted_count} process details documents"
+        
+        self.message_user(request, message, messages.SUCCESS)
 
 
 @admin.register(NodeUsecaseCandidate)

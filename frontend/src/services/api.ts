@@ -104,6 +104,11 @@ class ApiService {
     return response.data;
   }
 
+  async deleteProcessDetails(nodeId: number): Promise<{ message: string; node_id: number; node_code: string; node_name: string }> {
+    const response = await this.apiClient.delete(`/nodes/${nodeId}/delete_details/`);
+    return response.data;
+  }
+
   // Use Case Candidates
   async getUsecasesByNode(nodeId: number): Promise<NodeUsecaseCandidate[]> {
     const response = await this.apiClient.get('/usecases/by_node/', {

@@ -273,6 +273,39 @@ class ProcessNodeViewSet(ModelViewSet):
                 status=500
             )
 
+    @action(detail=True, methods=['delete'])
+    def delete_details(self, request, pk=None):
+        """Delete process details document for a specific node"""
+        node = self.get_object()
+        
+        try:
+            # Find the process details document for this node
+            document = NodeDocument.objects.get(
+                node=node,
+                user=request.user,
+                document_type='process_details'
+            )
+            
+            # Delete the document
+            document.delete()
+            
+            return Response({
+                'message': 'Process details document deleted successfully',
+                'node_id': node.id,
+                'node_code': node.code,
+                'node_name': node.name
+            }, status=200)
+            
+        except NodeDocument.DoesNotExist:
+            return Response({
+                'error': 'No process details document found for this node'
+            }, status=404)
+        
+        except Exception as e:
+            return Response({
+                'error': f'Failed to delete process details: {str(e)}'
+            }, status=500)
+
 
 class NodeDocumentViewSet(ModelViewSet):
     serializer_class = NodeDocumentSerializer

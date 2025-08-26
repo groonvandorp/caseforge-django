@@ -261,6 +261,27 @@ const Composer: React.FC = () => {
     }
   };
 
+  const handleDeleteProcessDetails = async () => {
+    if (!selectedNode || !processDetails) return;
+    
+    if (window.confirm(`Are you sure you want to delete the process details document for "${selectedNode.name}"? This action cannot be undone.`)) {
+      try {
+        const response = await apiService.deleteProcessDetails(selectedNode.id);
+        
+        // Remove from local state immediately
+        setProcessDetails(null);
+        alert(`Process details deleted successfully for ${response.node_code} (${response.node_name}).`);
+        
+        // Optionally refresh the node data to ensure consistency
+        await loadNodeData();
+      } catch (error: any) {
+        console.error('Failed to delete process details:', error);
+        const errorMessage = error.response?.data?.error || 'Failed to delete process details. Please try again.';
+        alert(errorMessage);
+      }
+    }
+  };
+
   const handleDeleteCandidate = async (candidate: NodeUsecaseCandidate) => {
     if (window.confirm('Are you sure you want to delete this use case candidate?')) {
       try {
@@ -453,10 +474,26 @@ const Composer: React.FC = () => {
                   <>
                     {processDetails && (
                       <Box sx={{ mb: 3 }}>
-                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Description fontSize="small" />
-                          Process Details
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Description fontSize="small" />
+                            Process Details
+                          </Typography>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            startIcon={<Delete fontSize="small" />}
+                            onClick={handleDeleteProcessDetails}
+                            sx={{ 
+                              fontSize: '0.75rem',
+                              height: '28px',
+                              minWidth: '100px'
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </Box>
                         <Card variant="outlined" sx={{ backgroundColor: 'action.hover' }}>
                           <CardContent>
                             <Box sx={{ 
