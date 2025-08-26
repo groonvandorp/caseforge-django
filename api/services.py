@@ -324,27 +324,72 @@ class OpenAIService:
         return json.dumps(user_request, indent=2)
     
     def _build_usecase_prompt(self, node: ProcessNode, context: Dict[str, Any]) -> str:
-        prompt = f"""
-        Generate AI use case candidates for this business process:
+        # Start with basic process information
+        prompt_parts = [
+            "Generate AI use case candidates for this business process:",
+            "",
+            f"Process Code: {node.code}",
+            f"Process Name: {node.name}",
+            f"Process Level: {node.level}",
+            f"Description: {node.description or 'No description available'}",
+            ""
+        ]
         
-        Process: {node.code} - {node.name}
-        Description: {node.description or 'No description available'}
+        # Add process hierarchy context
+        if context.get('ancestors'):
+            prompt_parts.append("Process Hierarchy:")
+            for ancestor in context['ancestors']:
+                prompt_parts.append(f"  - Level {ancestor['level']}: {ancestor['code']} - {ancestor['name']}")
+            prompt_parts.append("")
         
-        Generate 3-5 practical AI use case candidates in JSON format:
-        {{
-            "candidates": [
-                {{
-                    "title": "Clear, actionable title",
-                    "description": "Detailed description of the AI solution",
-                    "impact_assessment": "Expected business impact and benefits",
-                    "complexity_score": 1-10,
-                    "ai_technologies": ["list of relevant AI technologies"],
-                    "implementation_effort": "Low/Medium/High",
-                    "roi_potential": "Low/Medium/High"
-                }}
-            ]
-        }}
-        """
+        # Add the full process details document if available
+        if context.get('process_details'):
+            prompt_parts.extend([
+                "DETAILED PROCESS INFORMATION:",
+                "================================",
+                context['process_details'],
+                "================================",
+                ""
+            ])
+        
+        # Add children processes if any
+        if context.get('children'):
+            prompt_parts.append("Sub-processes:")
+            for child in context['children'][:10]:  # Limit to 10 to avoid token overflow
+                prompt_parts.append(f"  - {child['code']}: {child['name']}")
+            prompt_parts.append("")
+        
+        # Add sibling processes for context
+        if context.get('siblings'):
+            prompt_parts.append("Related Processes at Same Level:")
+            for sibling in context['siblings'][:5]:  # Limit to 5
+                prompt_parts.append(f"  - {sibling['code']}: {sibling['name']}")
+            prompt_parts.append("")
+        
+        # Add the generation instructions
+        prompt_parts.extend([
+            "Based on the detailed process information above, generate 3-5 highly relevant and practical AI use case candidates.",
+            "Consider the specific inputs, outputs, KPIs, steps, and challenges mentioned in the process details.",
+            "Each use case should directly address the pain points and opportunities identified in the process documentation.",
+            "",
+            "Generate the candidates in JSON format:",
+            "{",
+            '    "candidates": [',
+            "        {",
+            '            "title": "Clear, actionable title that addresses a specific process need",',
+            '            "description": "Detailed description explaining how AI will improve this specific process",',
+            '            "impact_assessment": "Quantifiable business impact based on the process KPIs and objectives",',
+            '            "complexity_score": 1-10,',
+            '            "ai_technologies": ["specific AI technologies relevant to the process needs"],',
+            '            "implementation_effort": "Low/Medium/High",',
+            '            "roi_potential": "Low/Medium/High",',
+            '            "process_alignment": "How this aligns with the process inputs, outputs, and KPIs"',
+            "        }",
+            "    ]",
+            "}"
+        ])
+        
+        prompt = "\n".join(prompt_parts)
         return prompt
     
     def _build_specification_prompt(self, candidate: NodeUsecaseCandidate, context: Dict[str, Any]) -> str:

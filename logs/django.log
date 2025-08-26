@@ -293,3 +293,13 @@ INFO 2025-08-26 09:23:35,257 autoreload 16519 8765808832 /Users/oliver/Library/M
 INFO 2025-08-26 09:23:35,558 autoreload 16573 8765808832 Watching for file changes with StatReloader
 INFO 2025-08-26 09:23:54,088 autoreload 16573 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
 INFO 2025-08-26 09:23:54,375 autoreload 16718 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 09:35:27,147 autoreload 16718 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-26 09:35:27,650 autoreload 19984 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 10:39:10,435 autoreload 19984 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/tasks.py changed, reloading.
+INFO 2025-08-26 10:39:11,210 autoreload 27464 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 10:39:31,890 autoreload 27464 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-26 10:39:32,318 autoreload 27619 8765808832 Watching for file changes with StatReloader
+ERROR 2025-08-26 10:43:04,303 views 27619 6212481024 Process details deletion failed for node 1.1.2.3 by user gruhno (ID: 2): get() returned more than one NodeDocument -- it returned 2!
+ERROR 2025-08-26 10:43:04,304 log 27619 6212481024 Internal Server Error: /api/nodes/1099/delete_details/
+ERROR 2025-08-26 10:43:26,313 views 27619 6195654656 Process details deletion failed for node 1.1.2.3 by user gruhno (ID: 2): get() returned more than one NodeDocument -- it returned 2!
+ERROR 2025-08-26 10:43:26,314 log 27619 6195654656 Internal Server Error: /api/nodes/1099/delete_details/

@@ -215,28 +215,62 @@ const Composer: React.FC = () => {
 
     setLoadingUsecases(true);
     try {
-      // TODO: Implement AI generation endpoint
       console.log('Generate use cases for:', selectedNode.code);
-      // For now, create mock candidates
-      const mockCandidates: NodeUsecaseCandidate[] = [
-        {
-          id: Date.now(),
-          node: selectedNode.id,
-          node_code: selectedNode.code,
-          node_name: selectedNode.name,
-          candidate_uid: `uc-${Date.now()}`,
-          title: 'AI-Powered Process Automation',
-          description: 'Implement intelligent automation to streamline this process',
-          impact_assessment: 'High impact - 40% efficiency gain expected',
-          complexity_score: 7,
-          created_at: new Date().toISOString(),
-        },
-      ];
-      setUsecaseCandidates(prev => [...prev, ...mockCandidates]);
+      
+      // Call the real API endpoint
+      const response = await apiService.generateUsecaseCandidates(selectedNode.id, true, true);
+      console.log('Usecase generation started:', response);
+
+      // Start polling for task completion (same pattern as process details)
+      const taskId = response.task_id;
+      setTaskProgress({ current: 0, total: 4, status: 'Starting usecase generation...' });
+      
+      const poll = async () => {
+        try {
+          const response = await apiService.api.get(`/nodes/task-status/${taskId}/`);
+          const statusResponse = response.data;
+          console.log('Task status:', statusResponse);
+          
+          if (statusResponse.status === 'PROGRESS' && statusResponse.info) {
+            setTaskProgress(statusResponse.info);
+          }
+          
+          if (statusResponse.ready) {
+            setLoadingUsecases(false);
+            setTaskProgress(null);
+            
+            if (statusResponse.success) {
+              alert('AI usecase candidates generated successfully! Refreshing candidates...');
+              // Refresh the usecase candidates list
+              if (selectedNode) {
+                const candidates = await apiService.getUsecasesByNode(selectedNode.id);
+                setUsecaseCandidates(candidates);
+              }
+            } else {
+              const errorMsg = statusResponse.error || 'Generation failed';
+              alert(`Failed to generate usecase candidates: ${errorMsg}`);
+            }
+            return;
+          }
+          
+          // Continue polling
+          setTimeout(poll, 2000);
+        } catch (error) {
+          console.error('Failed to check task status:', error);
+          setLoadingUsecases(false);
+          setTaskProgress(null);
+          alert('Unable to check generation status. Please refresh the page to see if candidates were created.');
+        }
+      };
+      
+      // Start polling after a short delay
+      setTimeout(poll, 1000);
+      
     } catch (error) {
       console.error('Failed to generate use cases:', error);
-    } finally {
+      alert('Failed to start usecase generation. Please try again.');
       setLoadingUsecases(false);
+      setTaskProgress(null);
     }
   };
 
@@ -471,6 +505,20 @@ const Composer: React.FC = () => {
                       </Box>
                     )}
                     
+                    {/* AI Usecase Candidates Generation Button - Only show when process details exist */}
+                    {processDetails && (
+                      <Button
+                        variant="outlined"
+                        startIcon={<AutoAwesome />}
+                        onClick={handleGenerateUsecases}
+                        disabled={loadingUsecases || loadingDetails}
+                        fullWidth
+                        sx={{ mb: 1 }}
+                      >
+                        {loadingUsecases ? 'Generating AI Usecases...' : 'Generate AI Usecase Candidates'}
+                      </Button>
+                    )}
+                    
                     {/* Progress indicator */}
                     {taskProgress && (
                       <Box sx={{ mt: 2 }}>
@@ -554,129 +602,132 @@ const Composer: React.FC = () => {
                       AI Use Case Candidates ({usecaseCandidates.length})
                     </Typography>
                     
-                    {/* Use Case Candidates Table */}
-                    <Box sx={{ 
-                      border: '1px solid', 
-                      borderColor: 'divider', 
-                      borderRadius: 1, 
-                      overflow: 'hidden',
-                      backgroundColor: 'background.paper',
-                      fontSize: '13px'
-                    }}>
-                      {/* Table Header */}
-                      <Box sx={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: '2fr 80px 70px 140px', 
-                        backgroundColor: 'action.selected',
-                        px: 1,
-                        py: 0.75,
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                        fontSize: '13px',
-                        fontWeight: 600
-                      }}>
-                        <Box>Use Case</Box>
-                        <Box>Complexity</Box>
-                        <Box sx={{ textAlign: 'center' }}>Has Spec</Box>
-                        <Box>Actions</Box>
-                      </Box>
-                      
-                      {/* Table Body */}
-                      {usecaseCandidates.map((uc, index) => (
-                        <Box key={uc.id} sx={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: '2fr 80px 70px 140px', 
-                          px: 1,
-                          py: 0.75,
-                          borderBottom: index < usecaseCandidates.length - 1 ? '1px solid' : 'none',
-                          borderColor: 'divider',
-                          fontSize: '13px',
-                          '&:hover': {
-                            backgroundColor: 'action.hover'
-                          },
-                          alignItems: 'center'
-                        }}>
-                          {/* Use Case Title & Description */}
-                          <Box>
-                            <Typography variant="body2" fontWeight={600} sx={{ mb: 0.25, fontSize: '13px' }}>
-                              {uc.title}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ 
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              lineHeight: 1.3,
-                              fontSize: '12px'
-                            }}>
+                    {/* Use Case Candidates as Expandable Cards */}
+                    {usecaseCandidates.map((uc, index) => {
+                      const hasSpec = findSpecDocument(uc);
+                      return (
+                        <Card key={uc.id} variant="outlined" sx={{ mb: 1.5 }}>
+                          <CardContent>
+                            {/* Header with Title and Actions */}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                              <Box sx={{ flex: 1, mr: 2 }}>
+                                <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600, mb: 0.5 }}>
+                                  {uc.title}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                                  {uc.complexity_score && (
+                                    <Chip 
+                                      label={`Complexity: ${uc.complexity_score}/10`} 
+                                      size="small" 
+                                      color={uc.complexity_score <= 3 ? 'success' : uc.complexity_score <= 6 ? 'warning' : 'error'}
+                                      variant="outlined"
+                                    />
+                                  )}
+                                  {hasSpec && (
+                                    <Chip 
+                                      label="Spec Available" 
+                                      size="small" 
+                                      color="primary" 
+                                      variant="filled"
+                                    />
+                                  )}
+                                  {uc.meta_json?.implementation_effort && (
+                                    <Chip 
+                                      label={`Effort: ${uc.meta_json.implementation_effort}`} 
+                                      size="small" 
+                                      variant="outlined"
+                                    />
+                                  )}
+                                  {uc.meta_json?.roi_potential && (
+                                    <Chip 
+                                      label={`ROI: ${uc.meta_json.roi_potential}`} 
+                                      size="small" 
+                                      variant="outlined"
+                                      color="secondary"
+                                    />
+                                  )}
+                                </Box>
+                              </Box>
+                              
+                              {/* Action Buttons */}
+                              <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  onClick={() => handleGenerateSpec(uc)}
+                                  disabled={!!hasSpec}
+                                >
+                                  {hasSpec ? 'Spec Generated' : 'Generate Spec'}
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="error"
+                                  onClick={() => handleDeleteCandidate(uc)}
+                                >
+                                  Delete
+                                </Button>
+                              </Box>
+                            </Box>
+                            
+                            {/* Full Description */}
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.6 }}>
                               {uc.description}
                             </Typography>
+                            
+                            {/* Impact Assessment */}
                             {uc.impact_assessment && (
-                              <Typography variant="caption" color="primary" sx={{ display: 'block', mt: 0.25, fontSize: '11px' }}>
-                                Impact: {uc.impact_assessment.substring(0, 40)}{uc.impact_assessment.length > 40 ? '...' : ''}
-                              </Typography>
+                              <Box sx={{ mb: 1.5 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
+                                  Impact Assessment
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                                  {uc.impact_assessment}
+                                </Typography>
+                              </Box>
                             )}
-                          </Box>
-                          
-                          {/* Complexity Score */}
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {uc.complexity_score && (
-                              <Chip
-                                label={`${uc.complexity_score}/10`}
-                                size="small"
-                                color={uc.complexity_score <= 3 ? 'success' : 
-                                       uc.complexity_score <= 7 ? 'warning' : 'error'}
-                                sx={{ height: 24 }}
-                              />
+                            
+                            {/* Additional Metadata */}
+                            {uc.meta_json && (
+                              <Box sx={{ mt: 2 }}>
+                                {uc.meta_json.ai_technologies && uc.meta_json.ai_technologies.length > 0 && (
+                                  <Box sx={{ mb: 1 }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 600, mr: 1 }}>
+                                      AI Technologies:
+                                    </Typography>
+                                    {uc.meta_json.ai_technologies.map((tech: string, idx: number) => (
+                                      <Chip 
+                                        key={idx}
+                                        label={tech} 
+                                        size="small" 
+                                        sx={{ mr: 0.5, mb: 0.5 }}
+                                        variant="outlined"
+                                      />
+                                    ))}
+                                  </Box>
+                                )}
+                                
+                                {uc.meta_json.process_alignment && (
+                                  <Box>
+                                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                      Process Alignment:
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                                      {uc.meta_json.process_alignment}
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Box>
                             )}
-                          </Box>
-                          
-                          {/* Has Spec */}
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {nodeDocuments.some(doc => 
-                              doc.document_type === 'usecase_spec' && 
-                              (doc.title?.includes(uc.title) || doc.content?.includes(uc.candidate_uid || ''))
-                            ) && (
-                              <CheckCircle sx={{ color: 'success.main', fontSize: '18px' }} />
-                            )}
-                          </Box>
-                          
-                          {/* Actions */}
-                          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', justifyContent: 'flex-end' }}>
-                            <Button
-                              size="small"
-                              variant={findSpecDocument(uc) ? 'outlined' : 'contained'}
-                              startIcon={<Visibility />}
-                              onClick={() => handleViewOrGenerateSpec(uc)}
-                              sx={{ 
-                                fontSize: '11px',
-                                height: '28px',
-                                minWidth: '60px',
-                                px: 0.5
-                              }}
-                            >
-                              {findSpecDocument(uc) ? 'View' : 'Gen'} Spec
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="error"
-                              startIcon={<Delete />}
-                              onClick={() => handleDeleteCandidate(uc)}
-                              sx={{ 
-                                fontSize: '11px',
-                                height: '28px',
-                                minWidth: '45px',
-                                px: 0.5
-                              }}
-                            >
-                              Del
-                            </Button>
-                          </Box>
-                        </Box>
-                      ))}
-                    </Box>
+                            
+                            {/* Created Date */}
+                            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 2 }}>
+                              Generated: {new Date(uc.created_at).toLocaleString()}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </Box>
                 )}
               </Box>
