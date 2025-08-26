@@ -1,0 +1,404 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.status-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.status-card h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-green { background-color: #28a745; }
+.status-yellow { background-color: #ffc107; }
+.status-red { background-color: #dc3545; }
+.status-gray { background-color: #6c757d; }
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.metric-row:last-child {
+    border-bottom: none;
+}
+
+.metric-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.metric-value {
+    color: #333;
+    font-family: monospace;
+}
+
+.worker-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.worker-item {
+    padding: 8px;
+    margin: 4px 0;
+    background: #f8f9fa;
+    border-left: 4px solid #28a745;
+    border-radius: 2px;
+}
+
+.worker-item.inactive {
+    border-left-color: #dc3545;
+}
+
+.task-list {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.task-item {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9em;
+}
+
+.task-status {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+.task-status.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.task-status.failure {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.task-status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.json-display {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    font-family: monospace;
+    font-size: 0.85em;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+.refresh-btn {
+    background: #007cba;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.refresh-btn:hover {
+    background: #005a87;
+}
+
+.auto-refresh {
+    margin-left: 10px;
+}
+
+.auto-refresh input {
+    margin-right: 5px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="help">{{ subtitle }}</p>
+
+{% if error %}
+<div class="messagelist">
+    <div class="error">Error: {{ error }}</div>
+</div>
+{% else %}
+
+<div style="margin-bottom: 20px;">
+    <button class="refresh-btn" onclick="refreshStatus()">🔄 Refresh Status</button>
+    <span class="auto-refresh">
+        <label>
+            <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+            Auto-refresh (30s)
+        </label>
+    </span>
+    <span id="lastUpdated" style="margin-left: 20px; color: #666; font-size: 0.9em;"></span>
+</div>
+
+<div class="status-grid">
+    <!-- Worker Status Card -->
+    <div class="status-card">
+        <h3>
+            <span class="status-indicator {% if system_status.workers.active_workers > 0 %}status-green{% else %}status-red{% endif %}"></span>
+            Celery Workers
+        </h3>
+        
+        <div class="metric-row">
+            <span class="metric-label">Active Workers:</span>
+            <span class="metric-value">{{ system_status.workers.active_workers }}/{{ system_status.workers.total_workers }}</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Running Processes:</span>
+            <span class="metric-value">{{ system_status.workers.processes|length }}</span>
+        </div>
+        
+        {% if not system_status.workers.inspect_available %}
+        <div class="metric-row">
+            <span class="metric-label">Inspect Status:</span>
+            <span class="metric-value" style="color: #ff8800;">⚠️ Unavailable (using process detection)</span>
+        </div>
+        {% endif %}
+        
+        {% if system_status.workers.workers %}
+        <div class="worker-list">
+            {% for worker in system_status.workers.workers %}
+            <div class="worker-item {% if worker.status != 'active' %}inactive{% endif %}">
+                <strong>{{ worker.name }}</strong><br>
+                <small>Pool: {{ worker.pool }} | Processes: {{ worker.processes }} | Active Tasks: {{ worker.tasks_active }}</small>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Queue Status Card -->
+    <div class="status-card">
+        <h3>
+            <span class="status-indicator {% if system_status.queues.results.active_tasks == 0 %}status-green{% elif system_status.queues.results.active_tasks < 10 %}status-yellow{% else %}status-red{% endif %}"></span>
+            Task Queues
+        </h3>
+        
+        {% if system_status.queues.broker %}
+        <div class="metric-row">
+            <span class="metric-label">Queued Messages:</span>
+            <span class="metric-value">{{ system_status.queues.broker.visible_messages }}</span>
+        </div>
+        {% endif %}
+        
+        {% if system_status.queues.results %}
+        <div class="metric-row">
+            <span class="metric-label">Active Tasks:</span>
+            <span class="metric-value">{{ system_status.queues.results.active_tasks }}</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Successful Today:</span>
+            <span class="metric-value">{{ system_status.queues.results.successful_today }}</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Recent Tasks (1h):</span>
+            <span class="metric-value">{{ system_status.queues.results.recent_tasks_1h }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- System Health Card -->
+    <div class="status-card">
+        <h3>
+            <span class="status-indicator {% if system_status.system.cpu_percent < 80 %}status-green{% elif system_status.system.cpu_percent < 95 %}status-yellow{% else %}status-red{% endif %}"></span>
+            System Health
+        </h3>
+        
+        <div class="metric-row">
+            <span class="metric-label">CPU Usage:</span>
+            <span class="metric-value">{{ system_status.system.cpu_percent|floatformat:1 }}%</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Memory Usage:</span>
+            <span class="metric-value">{{ system_status.system.memory.percent|floatformat:1 }}%</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Disk Usage:</span>
+            <span class="metric-value">{{ system_status.system.disk.percent|floatformat:1 }}%</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Load Average:</span>
+            <span class="metric-value">{{ system_status.system.load_average.0|floatformat:2 }}</span>
+        </div>
+    </div>
+
+    <!-- Dependencies Card -->
+    <div class="status-card">
+        <h3>
+            <span class="status-indicator status-green"></span>
+            Dependencies
+        </h3>
+        
+        <div class="metric-row">
+            <span class="metric-label">OpenAI API:</span>
+            <span class="metric-value">
+                {% if system_status.dependencies.openai.status == 'configured' %}
+                    ✅ Configured
+                {% else %}
+                    ❌ Not configured
+                {% endif %}
+            </span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Database:</span>
+            <span class="metric-value">
+                {% if system_status.dependencies.database.status == 'connected' %}
+                    ✅ Connected
+                {% else %}
+                    ❌ Error
+                {% endif %}
+            </span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Celery Broker:</span>
+            <span class="metric-value">
+                {% if system_status.dependencies.celery_broker.status == 'available' %}
+                    ✅ Available
+                {% else %}
+                    ❌ Missing
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Recent Tasks Card -->
+    <div class="status-card">
+        <h3>
+            <span class="status-indicator {% if system_status.tasks.metrics.success_rate > 80 %}status-green{% elif system_status.tasks.metrics.success_rate > 50 %}status-yellow{% else %}status-red{% endif %}"></span>
+            Recent Tasks
+        </h3>
+        
+        <div class="metric-row">
+            <span class="metric-label">Success Rate (24h):</span>
+            <span class="metric-value">{{ system_status.tasks.metrics.success_rate|floatformat:1 }}%</span>
+        </div>
+        
+        <div class="task-list">
+            {% for task in system_status.tasks.recent_tasks %}
+            <div class="task-item">
+                <div>
+                    <span class="task-status {{ task.status|lower }}">{{ task.status }}</span>
+                    {{ task.name|default:"Unknown Task" }}
+                </div>
+                <small style="color: #666;">
+                    {{ task.date_done|default:"In progress" }}
+                    {% if task.has_error %} | ❌ Error{% endif %}
+                </small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Task Performance Card -->
+    <div class="status-card">
+        <h3>
+            <span class="status-indicator status-green"></span>
+            Performance Metrics
+        </h3>
+        
+        <div class="metric-row">
+            <span class="metric-label">Avg Duration:</span>
+            <span class="metric-value">{{ system_status.tasks.metrics.avg_duration|floatformat:1 }}s</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Success (24h):</span>
+            <span class="metric-value">{{ system_status.tasks.metrics.success_count_24h }}</span>
+        </div>
+        
+        <div class="metric-row">
+            <span class="metric-label">Failures (24h):</span>
+            <span class="metric-value">{{ system_status.tasks.metrics.failure_count_24h }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Raw JSON Data (Collapsible) -->
+<div style="margin-top: 30px;">
+    <h3 onclick="toggleJson()" style="cursor: pointer;">📋 Raw System Data (Click to toggle)</h3>
+    <div id="jsonData" class="json-display" style="display: none;">{{ status_json }}</div>
+</div>
+
+{% endif %}
+
+<script>
+let autoRefreshInterval;
+
+function refreshStatus() {
+    // Show loading indicator
+    document.getElementById('lastUpdated').textContent = 'Refreshing...';
+    
+    // Reload the page to get fresh data
+    window.location.reload();
+}
+
+function toggleAutoRefresh() {
+    const checkbox = document.getElementById('autoRefresh');
+    if (checkbox.checked) {
+        autoRefreshInterval = setInterval(refreshStatus, 30000);
+        document.getElementById('lastUpdated').textContent = 'Auto-refresh enabled';
+    } else {
+        clearInterval(autoRefreshInterval);
+        document.getElementById('lastUpdated').textContent = 'Auto-refresh disabled';
+    }
+}
+
+function toggleJson() {
+    const jsonData = document.getElementById('jsonData');
+    jsonData.style.display = jsonData.style.display === 'none' ? 'block' : 'none';
+}
+
+// Set last updated timestamp
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+});
+</script>
+
+{% endblock %}

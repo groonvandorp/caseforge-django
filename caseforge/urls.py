@@ -19,13 +19,14 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
+from core.admin import admin_site
 
 def index_view(request):
     return redirect('/admin/')
 
 urlpatterns = [
     path('', index_view, name='index'),
-    path('admin/', admin.site.urls),
+    path('admin/', admin_site.urls),
     path('api/', include('api.urls')),
 ]
 

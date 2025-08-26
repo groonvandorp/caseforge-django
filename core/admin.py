@@ -1,11 +1,16 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth import get_user_model
+from django.urls import path
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.template.response import TemplateResponse
 from .models import (
     ProcessModel, ProcessModelVersion, ProcessNode, SourceDocument,
     NodeDocument, NodeUsecaseCandidate, NodeBookmark, Portfolio,
     PortfolioItem, UserSettings, ModelAccess, NodeEmbedding, AdminSettings
 )
+from .monitoring import system_monitor
 
 User = get_user_model()
 
@@ -170,3 +175,73 @@ class AdminSettingsAdmin(admin.ModelAdmin):
             form.base_fields['value'].help_text = 'OpenAI model to use (e.g., gpt-4o, gpt-3.5-turbo)'
         
         return form
+
+
+# Custom Admin Site with System Monitoring
+class SystemMonitoringAdminSite(admin.AdminSite):
+    """Custom admin site with system monitoring capabilities"""
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('system-status/', self.admin_view(self.system_status_view), name='system_status'),
+            path('api/worker-health/', self.admin_view(self.worker_health_api), name='worker_health_api'),
+        ]
+        return custom_urls + urls
+    
+    def system_status_view(self, request):
+        """System status dashboard view"""
+        try:
+            status = system_monitor.get_system_status()
+            context = {
+                **self.each_context(request),
+                'system_status': status,
+                'title': 'System Status Dashboard',
+                'subtitle': 'Monitor Celery workers, tasks, and system health'
+            }
+            return TemplateResponse(request, 'admin/system_status.html', context)
+        except Exception as e:
+            context = {
+                **self.each_context(request),
+                'error': str(e),
+                'title': 'System Status Dashboard',
+                'subtitle': 'Error retrieving system status'
+            }
+            return TemplateResponse(request, 'admin/system_status.html', context)
+    
+    def worker_health_api(self, request):
+        """API endpoint for quick worker health status"""
+        try:
+            health = system_monitor.get_worker_health_summary()
+            return JsonResponse({'health': health})
+        except Exception as e:
+            return JsonResponse({'health': f"❌ Error: {str(e)}"}, status=500)
+
+    def index(self, request, extra_context=None):
+        """Override admin index to show system status"""
+        context = extra_context or {}
+        
+        # Add worker health to admin index
+        try:
+            context['worker_health'] = system_monitor.get_worker_health_summary()
+        except Exception as e:
+            context['worker_health'] = f"❌ Monitor Error: {str(e)}"
+        
+        return super().index(request, context)
+
+
+# Use custom admin site
+admin_site = SystemMonitoringAdminSite(name='admin')
+
+# Re-register all models with the custom admin site
+admin_site.register(User, UserAdmin)
+admin_site.register(ProcessModel, ProcessModelAdmin)
+admin_site.register(ProcessModelVersion, ProcessModelVersionAdmin)
+admin_site.register(ProcessNode, ProcessNodeAdmin)
+admin_site.register(NodeDocument, NodeDocumentAdmin)
+admin_site.register(NodeUsecaseCandidate, NodeUsecaseCandidateAdmin)
+admin_site.register(NodeBookmark, NodeBookmarkAdmin)
+admin_site.register(Portfolio, PortfolioAdmin)
+admin_site.register(ModelAccess, ModelAccessAdmin)
+admin_site.register(UserSettings, UserSettingsAdmin)
+admin_site.register(AdminSettings, AdminSettingsAdmin)
