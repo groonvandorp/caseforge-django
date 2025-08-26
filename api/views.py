@@ -1,3 +1,4 @@
+import logging
 import jwt as pyjwt
 from datetime import datetime, timedelta
 from django.conf import settings
@@ -22,6 +23,7 @@ from .serializers import (
 )
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
@@ -286,8 +288,19 @@ class ProcessNodeViewSet(ModelViewSet):
                 document_type='process_details'
             )
             
+            # Log the delete action before deletion
+            logger.info(
+                f"Process details deletion - User: {request.user.username} (ID: {request.user.id}), "
+                f"Node: {node.code} - {node.name} (ID: {node.id}), "
+                f"Document ID: {document.id}, "
+                f"Document created: {document.created_at}, "
+                f"IP: {request.META.get('REMOTE_ADDR', 'Unknown')}"
+            )
+            
             # Delete the document
             document.delete()
+            
+            logger.info(f"Process details successfully deleted for node {node.code} by user {request.user.username}")
             
             return Response({
                 'message': 'Process details document deleted successfully',
@@ -297,11 +310,19 @@ class ProcessNodeViewSet(ModelViewSet):
             }, status=200)
             
         except NodeDocument.DoesNotExist:
+            logger.warning(
+                f"Process details deletion attempt failed - No document found for node {node.code} "
+                f"by user {request.user.username} (ID: {request.user.id})"
+            )
             return Response({
                 'error': 'No process details document found for this node'
             }, status=404)
         
         except Exception as e:
+            logger.error(
+                f"Process details deletion failed for node {node.code} "
+                f"by user {request.user.username} (ID: {request.user.id}): {str(e)}"
+            )
             return Response({
                 'error': f'Failed to delete process details: {str(e)}'
             }, status=500)
