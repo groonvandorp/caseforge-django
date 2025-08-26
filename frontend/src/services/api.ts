@@ -109,6 +109,38 @@ class ApiService {
     return response.data;
   }
 
+  async generateUsecaseCandidates(nodeId: number, includeBranch = true, crossCategory = true): Promise<{
+    message: string;
+    task_id: string;
+    node_id: number;
+    node_code: string;
+    node_name: string;
+    status: string;
+  }> {
+    const response = await this.apiClient.post(`/nodes/${nodeId}/generate_usecases/`, {
+      include_branch: includeBranch,
+      cross_category: crossCategory
+    });
+    return response.data;
+  }
+
+  async getTaskStatus(taskId: string): Promise<{
+    task_id: string;
+    status: string;
+    ready: boolean;
+    success?: boolean;
+    result?: any;
+    error?: string;
+    info?: {
+      current: number;
+      total: number;
+      status: string;
+    };
+  }> {
+    const response = await this.apiClient.get(`/nodes/task-status/${taskId}/`);
+    return response.data;
+  }
+
   // Use Case Candidates
   async getUsecasesByNode(nodeId: number): Promise<NodeUsecaseCandidate[]> {
     const response = await this.apiClient.get('/usecases/by_node/', {

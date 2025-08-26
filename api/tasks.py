@@ -213,6 +213,19 @@ def generate_usecase_candidates_task(user_id: int, node_id: int, include_branch:
         # Get context
         context = ContextService.get_process_context(node, include_branch, cross_category)
         
+        # Fetch the process details document if it exists
+        try:
+            process_details = NodeDocument.objects.get(
+                node=node,
+                user=user,
+                document_type='process_details'
+            )
+            context['process_details'] = process_details.content
+            logger.info(f"Found process details document for node {node.code}, including in context")
+        except NodeDocument.DoesNotExist:
+            context['process_details'] = None
+            logger.warning(f"No process details document found for node {node.code}")
+        
         # Generate with AI
         ai_service = OpenAIService()
         candidates = ai_service.generate_usecase_candidates(node, context)

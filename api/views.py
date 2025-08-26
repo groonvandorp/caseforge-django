@@ -235,6 +235,63 @@ class ProcessNodeViewSet(ModelViewSet):
                 status=500
             )
 
+    @action(detail=True, methods=['post'])
+    def generate_usecases(self, request, pk=None):
+        """Generate AI usecase candidates for a specific node"""
+        node = self.get_object()
+        
+        # Only allow generation for leaf nodes (nodes with no children)
+        if node.children.exists():
+            return Response(
+                {'error': 'AI usecase candidates can only be generated for leaf nodes (nodes with no children)'}, 
+                status=400
+            )
+        
+        # Check if process details document exists for this node
+        from core.models import NodeDocument
+        process_details_exists = NodeDocument.objects.filter(
+            node=node,
+            user=request.user,
+            document_type='process_details'
+        ).exists()
+        
+        if not process_details_exists:
+            return Response(
+                {'error': 'Process details must be generated first before creating AI usecase candidates'}, 
+                status=400
+            )
+        
+        # Get parameters from request
+        include_branch = request.data.get('include_branch', True)
+        cross_category = request.data.get('cross_category', True)
+        
+        # Import the task here to avoid circular imports
+        from .tasks import generate_usecase_candidates_task
+        
+        # Start the async task
+        try:
+            task = generate_usecase_candidates_task.delay(
+                user_id=request.user.id,
+                node_id=node.id,
+                include_branch=include_branch,
+                cross_category=cross_category
+            )
+            
+            return Response({
+                'message': 'AI usecase candidates generation started. This will take a moment...',
+                'task_id': task.id,
+                'node_id': node.id,
+                'node_code': node.code,
+                'node_name': node.name,
+                'status': 'PENDING'
+            }, status=202)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to start usecase candidates generation: {str(e)}'}, 
+                status=500
+            )
+
     @action(detail=False, methods=['get'], url_path='task-status/(?P<task_id>[^/.]+)')
     def task_status(self, request, task_id=None):
         """Check the status of a background task"""
