@@ -146,3 +146,150 @@ WARNING 2025-08-25 18:04:07,588 log 95198 6165852160 Not Found: /api/nodes/by-co
 WARNING 2025-08-25 18:05:39,570 log 95198 6165852160 Not Found: /api/nodes/by-code/1.0/
 WARNING 2025-08-25 18:06:50,368 log 95198 6165852160 Not Found: /api/nodes/by-code/1.0/
 WARNING 2025-08-25 18:09:15,133 log 95198 6165852160 Not Found: /api/nodes/by-code/1.0/
+INFO 2025-08-25 18:26:08,715 autoreload 95198 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-25 18:26:09,379 autoreload 21124 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 18:32:45,579 autoreload 21124 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-25 18:32:46,014 autoreload 23107 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 18:34:39,968 _client 23107 6136967168 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+ERROR 2025-08-25 18:34:39,977 log 23107 6136967168 Internal Server Error: /api/nodes/1097/generate_details/
+INFO 2025-08-25 18:35:05,962 _client 23107 6136967168 HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 400 Bad Request"
+ERROR 2025-08-25 18:35:05,966 log 23107 6136967168 Internal Server Error: /api/nodes/1097/generate_details/
+INFO 2025-08-25 18:37:11,564 autoreload 23107 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-25 18:37:11,860 autoreload 24366 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 18:49:01,927 autoreload 24366 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/caseforge/settings.py changed, reloading.
+INFO 2025-08-25 18:49:02,225 autoreload 29971 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 18:50:47,170 autoreload 29971 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-25 18:50:47,515 autoreload 30581 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 18:51:08,194 autoreload 30581 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-25 18:51:08,563 autoreload 30713 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 19:01:58,416 autoreload 30713 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-25 19:01:58,912 autoreload 34434 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 19:12:00,349 autoreload 34434 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-25 19:12:00,837 autoreload 37644 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 19:17:46,538 autoreload 37644 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/models.py changed, reloading.
+INFO 2025-08-25 19:17:47,031 autoreload 39354 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 19:18:12,893 autoreload 39354 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
+INFO 2025-08-25 19:18:13,108 autoreload 39524 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 19:18:37,840 autoreload 39524 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
+INFO 2025-08-25 19:18:38,170 autoreload 39663 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 19:31:21,592 autoreload 39663 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 19:31:22,204 autoreload 43426 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 19:35:12,760 autoreload 43426 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 19:35:13,400 autoreload 44533 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 19:37:54,717 autoreload 44533 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 19:37:55,140 autoreload 45204 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 20:05:51,797 autoreload 45204 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 20:05:52,331 autoreload 58231 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 20:07:44,126 autoreload 58231 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 20:07:44,767 autoreload 59075 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 20:09:06,407 autoreload 59075 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 20:09:06,904 autoreload 59730 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 20:11:09,752 autoreload 59730 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 20:11:10,253 autoreload 60518 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 20:13:43,848 autoreload 60518 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 20:13:44,382 autoreload 61539 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 20:15:20,382 autoreload 61539 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 20:15:20,900 autoreload 62242 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-25 20:29:27,297 autoreload 62242 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-25 20:29:27,885 autoreload 66479 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 05:42:33,692 autoreload 66479 8765808832 /opt/homebrew/Caskroom/miniconda/base/lib/python3.13/site-packages/openai/types/beta/threads/file_citation_delta_annotation.py changed, reloading.
+INFO 2025-08-26 05:42:34,138 autoreload 74547 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 05:54:50,376 autoreload 74547 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py changed, reloading.
+INFO 2025-08-26 05:54:51,014 autoreload 77737 8765808832 Watching for file changes with StatReloader
+ERROR 2025-08-26 06:12:01,965 signal 83110 8765808832 Signal handler <promise@0x1026d3890 --> <bound method Celery._autodiscover_tasks of <Celery caseforge at 0x102653230>>> raised: ModuleNotFoundError("No module named 'openai'")
+Traceback (most recent call last):
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/celery/utils/dispatch/signal.py", line 280, in send
+    response = receiver(signal=self, sender=sender, **named)
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/vine/promises.py", line 161, in __call__
+    return self.throw()
+           ~~~~~~~~~~^^
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/vine/promises.py", line 158, in __call__
+    retval = fun(*final_args, **final_kwargs)
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/celery/app/base.py", line 788, in _autodiscover_tasks
+    return self._autodiscover_tasks_from_fixups(related_name)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/celery/app/base.py", line 797, in _autodiscover_tasks_from_fixups
+    return self._autodiscover_tasks_from_names([
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+        pkg for fixup in self._fixups
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        if hasattr(fixup, 'autodiscover_tasks')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        for pkg in fixup.autodiscover_tasks()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ], related_name=related_name)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/celery/app/base.py", line 792, in _autodiscover_tasks_from_names
+    return self.loader.autodiscover_tasks(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        packages() if callable(packages) else packages, related_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/celery/loaders/base.py", line 220, in autodiscover_tasks
+    mod.__name__ for mod in autodiscover_tasks(packages or (),
+                            ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+                                               related_name) if mod)
+                                               ^^^^^^^^^^^^^
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/celery/loaders/base.py", line 246, in autodiscover_tasks
+    return [find_related_module(pkg, related_name) for pkg in packages]
+            ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/celery/loaders/base.py", line 278, in find_related_module
+    raise e
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/venv/lib/python3.13/site-packages/celery/loaders/base.py", line 270, in find_related_module
+    return importlib.import_module(module_name)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/opt/homebrew/Caskroom/miniconda/base/lib/python3.13/importlib/__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/tasks.py", line 4, in <module>
+    from .services import OpenAIService, ContextService, DocumentService
+  File "/Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/services.py", line 7, in <module>
+    from openai import AsyncOpenAI
+ModuleNotFoundError: No module named 'openai'
+INFO 2025-08-26 06:19:16,330 autoreload 77737 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/tasks.py changed, reloading.
+INFO 2025-08-26 06:19:17,026 autoreload 86459 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 06:36:32,266 autoreload 86459 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
+INFO 2025-08-26 06:36:32,911 autoreload 92511 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 06:38:11,537 autoreload 93297 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 06:49:25,415 autoreload 93297 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/monitoring.py changed, reloading.
+INFO 2025-08-26 06:49:26,095 autoreload 96811 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 06:49:32,467 autoreload 96811 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/monitoring.py changed, reloading.
+INFO 2025-08-26 06:49:32,936 autoreload 96873 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 06:50:17,489 autoreload 96873 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/monitoring.py changed, reloading.
+INFO 2025-08-26 06:50:17,911 autoreload 97161 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 06:50:59,572 autoreload 97161 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/monitoring.py changed, reloading.
+INFO 2025-08-26 06:50:59,995 autoreload 97353 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 06:59:22,979 autoreload 97353 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/monitoring.py changed, reloading.
+INFO 2025-08-26 06:59:23,557 autoreload 99596 8765808832 Watching for file changes with StatReloader
+ERROR 2025-08-26 07:00:18,167 monitoring 99596 6157545472 Error getting worker status: 'type'
+ERROR 2025-08-26 07:00:29,042 monitoring 99596 6191198208 Error getting worker status: 'type'
+INFO 2025-08-26 07:01:00,543 autoreload 99596 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/monitoring.py changed, reloading.
+INFO 2025-08-26 07:01:01,036 autoreload 324 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 07:21:49,376 autoreload 324 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-26 07:21:50,099 autoreload 5250 8765808832 Watching for file changes with StatReloader
+WARNING 2025-08-26 07:23:40,178 log 5250 6199029760 Unauthorized: /api/auth/token/
+INFO 2025-08-26 07:26:10,508 autoreload 5250 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
+INFO 2025-08-26 07:26:10,933 autoreload 6665 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 07:26:30,646 autoreload 6665 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
+INFO 2025-08-26 07:26:31,110 autoreload 6802 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 07:26:49,734 autoreload 6802 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
+INFO 2025-08-26 07:26:50,118 autoreload 6969 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 09:22:44,377 autoreload 6969 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-26 09:22:45,157 autoreload 16122 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 09:22:57,765 autoreload 16122 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-26 09:22:58,249 autoreload 16244 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 09:23:13,783 autoreload 16244 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/api/views.py changed, reloading.
+INFO 2025-08-26 09:23:14,198 autoreload 16389 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 09:23:27,674 autoreload 16389 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
+INFO 2025-08-26 09:23:27,946 autoreload 16519 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 09:23:35,257 autoreload 16519 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
+INFO 2025-08-26 09:23:35,558 autoreload 16573 8765808832 Watching for file changes with StatReloader
+INFO 2025-08-26 09:23:54,088 autoreload 16573 8765808832 /Users/oliver/Library/Mobile Documents/com~apple~CloudDocs/Projekte/2025 Onwell/development/backend/django-port/core/admin.py changed, reloading.
+INFO 2025-08-26 09:23:54,375 autoreload 16718 8765808832 Watching for file changes with StatReloader

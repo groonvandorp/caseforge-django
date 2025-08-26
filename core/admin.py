@@ -1,3 +1,4 @@
+import logging
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth import get_user_model
@@ -14,6 +15,7 @@ from .models import (
 from .monitoring import system_monitor
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 @admin.register(User)
@@ -64,14 +66,25 @@ class ProcessNodeAdmin(admin.ModelAdmin):
         deleted_count = 0
         deleted_nodes = []
         
+        logger.info(f"Admin bulk delete process details started by user {request.user.username} for {queryset.count()} nodes")
+        
         for node in queryset:
             process_details = NodeDocument.objects.filter(node=node, document_type='process_details')
             if process_details.exists():
+                # Log each deletion
+                for doc in process_details:
+                    logger.info(
+                        f"Admin process details deletion - User: {request.user.username} (ID: {request.user.id}), "
+                        f"Node: {node.code} - {node.name} (ID: {node.id}), "
+                        f"Document ID: {doc.id}, Document created: {doc.created_at}"
+                    )
+                
                 process_details.delete()
                 deleted_count += 1
                 deleted_nodes.append(f"{node.code} ({node.name})")
         
         if deleted_count == 0:
+            logger.info(f"Admin bulk delete - No process details found by user {request.user.username}")
             self.message_user(request, "No process details documents found for the selected nodes.", messages.WARNING)
             return
         
@@ -82,6 +95,7 @@ class ProcessNodeAdmin(admin.ModelAdmin):
             if len(deleted_nodes) > 3:
                 message += f" and {len(deleted_nodes) - 3} more"
         
+        logger.info(f"Admin bulk delete completed - {deleted_count} process details deleted by user {request.user.username}")
         self.message_user(request, message, messages.SUCCESS)
 
 
