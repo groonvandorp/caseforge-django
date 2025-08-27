@@ -259,6 +259,50 @@ python manage.py test
 python manage.py collectstatic
 ```
 
+## Node Embeddings System
+
+### How Embeddings Are Created
+
+The system uses OpenAI's `text-embedding-3-small` model to create embeddings for process nodes, enabling semantic search functionality.
+
+#### Embedding Generation Process:
+
+1. **Celery Task**: `generate_embeddings_task` in `api/tasks.py:297`
+   - Accepts a list of node IDs
+   - Creates text representation: `"{node.name}. {node.description}"`
+   - Calls OpenAI API to generate embeddings
+   - Stores results in `NodeEmbedding` model
+
+2. **OpenAI Service**: `api/services.py:199-230`
+   - Uses `AsyncOpenAI` client
+   - Model: `text-embedding-3-small`
+   - Returns 1536-dimensional vectors
+   - Stored as JSON in database
+
+3. **Storage**: `NodeEmbedding` model
+   - One-to-one relationship with `ProcessNode`
+   - Fields: `embedding_vector` (JSON), `embedding_model`, `created_at`
+
+#### When Embeddings Are Created:
+
+- **Manual trigger**: Via Celery task `generate_embeddings_task`
+- **Not automatic**: Embeddings must be explicitly generated
+- **Bulk processing**: Can process multiple nodes at once
+
+#### Using Embeddings for Search:
+
+The `ContextService._find_similar_nodes()` method (currently placeholder) is designed to:
+- Calculate cosine similarity between query embedding and node embeddings
+- Return nodes ranked by similarity score
+- Support cross-category search when enabled
+
+#### Important Notes:
+
+- **OpenAI API Key Required**: Set via Admin Settings or environment variable
+- **Async Processing**: Uses Celery for background processing
+- **Embedding Model**: Fixed to `text-embedding-3-small` for consistency
+- **Text Format**: Combines node name and description for context
+
 ## Environment Variables
 
 Create `.env` file from `.env.example`:
@@ -268,3 +312,5 @@ Create `.env` file from `.env.example`:
 - `DATABASE_URL`: Database connection string (optional)
 - `JWT_SECRET_KEY`: JWT signing key
 - `JWT_EXPIRATION_DELTA`: Token expiration in minutes
+- `OPENAI_API_KEY`: OpenAI API key for embeddings and AI generation
+- `OPENAI_MODEL`: OpenAI model for text generation (default: gpt-4o)

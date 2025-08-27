@@ -21,6 +21,7 @@ from .serializers import (
     NodeUsecaseCandidateSerializer, NodeBookmarkSerializer,
     PortfolioSerializer, PortfolioItemSerializer, UserSettingsSerializer
 )
+from .search_service import search_service
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -645,3 +646,234 @@ def update_user_settings(request):
         return Response(serializer.data)
     
     return Response(serializer.errors, status=400)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def semantic_search(request):
+    """
+    Semantic search for process nodes using embeddings.
+    
+    Request body:
+    {
+        "query": "find customer service processes",
+        "model_version_id": 1,  // optional: filter by specific version ID
+        "model_key": "apqc_pcf", // optional: filter by model key (alternative to model_version_id)
+        "level_filter": [1, 2], // optional: filter by process levels
+        "limit": 10,            // optional: max results (default 20)
+        "min_similarity": 0.3   // optional: min similarity threshold (default 0.1)
+    }
+    """
+    try:
+        # Get request parameters
+        query = request.data.get('query', '').strip()
+        if not query:
+            return Response({'error': 'Query parameter is required'}, status=400)
+        
+        model_version_id = request.data.get('model_version_id')
+        model_key = request.data.get('model_key')
+        level_filter = request.data.get('level_filter', [])
+        limit = request.data.get('limit', 20)
+        min_similarity = request.data.get('min_similarity', 0.1)
+        
+        # Convert model_key to model_version_id if provided
+        if model_key and not model_version_id:
+            from core.models import ProcessModelVersion, ProcessModel
+            try:
+                # Get the current version for the model
+                model = ProcessModel.objects.get(model_key=model_key)
+                current_version = ProcessModelVersion.objects.filter(
+                    model=model, 
+                    is_current=True
+                ).first()
+                if current_version:
+                    model_version_id = current_version.id
+                    logger.info(f"Converted model_key '{model_key}' to model_version_id {model_version_id}")
+                else:
+                    logger.warning(f"No current version found for model_key '{model_key}'")
+            except ProcessModel.DoesNotExist:
+                logger.warning(f"Model with key '{model_key}' not found")
+        
+        # Validate parameters
+        if limit > 100:
+            limit = 100  # Prevent excessive results
+        
+        logger.info(f"Semantic search request: query='{query}', limit={limit}, "
+                   f"model_version_id={model_version_id}, level_filter={level_filter}")
+        
+        # Check if query looks like a process code (e.g., "1.1.1.1", "6.0", "3.2.1")
+        import re
+        code_pattern = r'^\d+(\.\d+)*$'
+        is_code_query = re.match(code_pattern, query.strip())
+        
+        
+        if is_code_query:
+            logger.info(f"Detected code query: '{query}' - using exact code search")
+            # For exact code queries, use direct database lookup
+            from core.models import ProcessNode
+            try:
+                nodes_query = ProcessNode.objects.select_related(
+                    'parent', 'model_version__model'
+                )
+                
+                if model_version_id:
+                    nodes_query = nodes_query.filter(model_version_id=model_version_id)
+                
+                # Look for exact code match
+                exact_match = nodes_query.filter(code=query.strip()).first()
+                if exact_match:
+                    results = [{
+                        'node_id': exact_match.id,
+                        'code': exact_match.code,
+                        'name': exact_match.name,
+                        'description': exact_match.description,
+                        'level': exact_match.level,
+                        'similarity_score': 1.0,  # Exact match
+                        'model_key': exact_match.model_version.model.model_key,
+                        'parent_code': exact_match.parent.code if exact_match.parent else None,
+                        'parent_name': exact_match.parent.name if exact_match.parent else None,
+                        'search_type': 'exact_code'
+                    }]
+                    
+                    return Response({
+                        'results': results,
+                        'search_type': 'exact_code',
+                        'query': query,
+                        'total_results': 1
+                    })
+                else:
+                    # No exact match found, fall back to text search for codes
+                    results = search_service.text_search_fallback(
+                        query=query,
+                        model_version_id=model_version_id,
+                        level_filter=level_filter,
+                        limit=limit
+                    )
+                    
+                    return Response({
+                        'results': results,
+                        'search_type': 'code_text_search',
+                        'query': query,
+                        'total_results': len(results)
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Error in code search: {e}")
+                # Fall through to semantic search
+        
+        try:
+            logger.info(f"Starting hybrid search for query: '{query}'")
+            
+            # Generate embedding for the search query
+            query_embedding = search_service.generate_query_embedding_sync(query)
+            
+            if not query_embedding:
+                # Fallback to text search if embedding generation fails
+                logger.warning("Query embedding generation failed, falling back to text search")
+                results = search_service.text_search_fallback(
+                    query=query,
+                    model_version_id=model_version_id,
+                    level_filter=level_filter,
+                    limit=limit
+                )
+                
+                return Response({
+                    'results': results,
+                    'search_type': 'text_fallback',
+                    'query': query,
+                    'total_results': len(results)
+                })
+            
+            # Perform semantic search with half the limit to leave room for text results
+            semantic_limit = max(1, limit // 2)
+            semantic_results = search_service.search_nodes(
+                query_embedding=query_embedding,
+                model_version_id=model_version_id,
+                level_filter=level_filter,
+                limit=semantic_limit,
+                min_similarity=min_similarity
+            )
+            
+            # Also perform text search to catch exact word matches that semantic search might miss
+            text_limit = limit - len(semantic_results)
+            text_results = search_service.text_search_fallback(
+                query=query,
+                model_version_id=model_version_id,
+                level_filter=level_filter,
+                limit=text_limit
+            )
+            
+            logger.info(f"Hybrid search: semantic_results={len(semantic_results)}, text_results={len(text_results)}")
+            
+            # Combine results, prioritizing semantic results but including text matches
+            seen_node_ids = set()
+            combined_results = []
+            
+            # Add semantic results first
+            for result in semantic_results:
+                node_id = result['node_id']
+                if node_id not in seen_node_ids:
+                    seen_node_ids.add(node_id)
+                    combined_results.append(result)
+            
+            # Add text results that weren't already included
+            text_added_count = 0
+            for result in text_results:
+                node_id = result['node_id']
+                code = result.get('code')
+                if node_id not in seen_node_ids and len(combined_results) < limit:
+                    seen_node_ids.add(node_id)
+                    # Mark as text match for transparency
+                    result['search_type'] = 'text_match'
+                    combined_results.append(result)
+                    text_added_count += 1
+                    if code == '1.1.5':
+                        logger.info(f"✅ Added target node [1.1.5] from text search!")
+                else:
+                    if code == '1.1.5':
+                        duplicate = 'duplicate' if node_id in seen_node_ids else 'limit reached'
+                        logger.info(f"❌ Target node [1.1.5] not added: {duplicate}")
+                        
+            logger.info(f"Added {text_added_count} unique text results to {len(semantic_results)} semantic results")
+            
+            search_type = 'hybrid' if len(text_results) > 0 and any(r.get('search_type') == 'text_match' for r in combined_results) else 'semantic'
+            
+            return Response({
+                'results': combined_results[:limit],
+                'search_type': search_type,
+                'query': query,
+                'total_results': len(combined_results[:limit]),
+                'min_similarity': min_similarity,
+                'semantic_count': len(semantic_results),
+                'text_count': len([r for r in combined_results if r.get('search_type') == 'text_match'])
+            })
+        
+        except ValueError as ve:
+            # OpenAI service not available, fallback to text search
+            logger.warning(f"Semantic search unavailable: {ve}, falling back to text search")
+            
+            results = search_service.text_search_fallback(
+                query=query,
+                model_version_id=model_version_id,
+                level_filter=level_filter,
+                limit=limit
+            )
+            
+            return Response({
+                'results': results,
+                'search_type': 'text_fallback',
+                'query': query,
+                'total_results': len(results),
+                'reason': 'OpenAI service unavailable'
+            })
+        
+        except Exception as e:
+            logger.error(f"Error in semantic search: {str(e)}")
+            return Response({
+                'error': 'Search service temporarily unavailable',
+                'details': str(e)
+            }, status=500)
+    
+    except Exception as e:
+        logger.error(f"Unexpected error in semantic search: {str(e)}")
+        return Response({'error': 'Internal server error'}, status=500)
