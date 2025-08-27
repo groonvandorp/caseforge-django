@@ -303,6 +303,146 @@ The `ContextService._find_similar_nodes()` method (currently placeholder) is des
 - **Embedding Model**: Fixed to `text-embedding-3-small` for consistency
 - **Text Format**: Combines node name and description for context
 
+## Batch Processing System
+
+CaseForge includes a comprehensive batch processing system for generating AI content at scale using OpenAI's Batch API. This system can process thousands of nodes efficiently and cost-effectively.
+
+### Available Batch Scripts
+
+#### 1. Process Details Generation
+**Script**: `batch_generate_process_details.py`
+**Purpose**: Generates comprehensive process documentation for all leaf nodes
+
+```bash
+# Generate process details for all leaf nodes
+python batch_generate_process_details.py
+
+# Test mode (5 nodes)
+python batch_generate_process_details.py --test --count 5
+```
+
+**Features**:
+- Hierarchical context building for each process node
+- Comprehensive documentation including overview, steps, inputs/outputs, roles, best practices
+- Uses GPT-5 model with 8,000 token completion limit
+- Assigns documents to gruhno user for UI visibility
+- Full audit trail with batch metadata
+
+#### 2. Use Case Candidates Generation
+**Script**: `batch_generate_usecase_candidates.py`
+**Purpose**: Generates 6-10 AI/automation use cases per process node
+
+```bash
+# Generate use cases for all nodes with process details
+python batch_generate_usecase_candidates.py
+
+# Test mode (5 nodes)
+python batch_generate_usecase_candidates.py --test --count 5
+```
+
+**Features**:
+- Requires existing process details documents as input
+- Generates practical, implementable use case candidates
+- Categories: automation, optimization, digitization, analytics, integration
+- Uses GPT-5 model with 15,000 token completion limit
+- Assigns to gruhno user for UI visibility
+- Structured output with impact assessment, complexity scoring, ROI estimates
+
+#### 3. Batch Monitoring and Management
+**Scripts**: `monitor_batch.py`, `monitor_usecase_batch.py`
+**Purpose**: Monitor batch progress and process results
+
+```bash
+# Monitor process details batch
+python monitor_batch.py
+
+# Monitor use case candidates batch
+python monitor_usecase_batch.py
+```
+
+**Features**:
+- Real-time progress tracking
+- Automatic result processing when batch completes
+- Error handling and reporting
+- Success/failure statistics
+
+#### 4. Retry Failed Nodes
+**Scripts**: `identify_failed_nodes.py`, `retry_failed_usecase_nodes.py`
+**Purpose**: Retry processing for nodes that failed in initial batch
+
+```bash
+# Identify nodes that failed processing
+python identify_failed_nodes.py
+
+# Retry failed nodes
+python retry_failed_usecase_nodes.py
+```
+
+### Batch Processing Workflow
+
+1. **Process Details Generation**:
+   ```bash
+   python batch_generate_process_details.py
+   python monitor_batch.py  # Wait for completion
+   ```
+
+2. **Use Case Candidates Generation**:
+   ```bash
+   python batch_generate_usecase_candidates.py
+   python monitor_usecase_batch.py  # Wait for completion
+   ```
+
+3. **Handle Failures** (if any):
+   ```bash
+   python identify_failed_nodes.py
+   python retry_failed_usecase_nodes.py
+   ```
+
+### Batch Configuration
+
+**Key Settings** (configured via AdminSettings):
+- `openai_api_key`: OpenAI API key for batch processing
+- `openai_model`: Model to use (default: gpt-5)
+- `openai_temperature`: Temperature setting (default: 1.0)
+
+**Token Limits**:
+- Process details: 8,000 max completion tokens
+- Use case candidates: 15,000 max completion tokens (increased to handle longer process docs)
+
+**User Assignment**: All generated content is assigned to the `gruhno` user to ensure UI visibility.
+
+### Batch Processing Results
+
+**Process Details** (as of latest run):
+- Total leaf nodes: 1,545
+- Successfully processed: 1,500 (97% success rate)
+- Documents created: 1,500 comprehensive process documents
+- Average document length: ~6,000 tokens
+
+**Use Case Candidates** (as of latest run):
+- Successfully processed: 1,090/1,545 nodes (70.7%)
+- Use cases created: 10,049 total
+- Retry batch: 455 nodes in progress
+- Expected final total: ~13,500 use cases
+
+### Monitoring Batch Status
+
+Batches typically complete within 24 hours. Monitor using:
+
+```bash
+# Check current batch status
+python monitor_usecase_batch.py
+
+# View batch ID
+cat batch_usecase_candidates/current_batch_id.txt
+```
+
+**Batch File Locations**:
+- Process details: `batch_process_details/`
+- Use case candidates: `batch_usecase_candidates/`
+- Input files: `batch_input_*.jsonl`
+- Output files: `batch_output_*.jsonl`
+
 ## Environment Variables
 
 Create `.env` file from `.env.example`:
@@ -313,4 +453,5 @@ Create `.env` file from `.env.example`:
 - `JWT_SECRET_KEY`: JWT signing key
 - `JWT_EXPIRATION_DELTA`: Token expiration in minutes
 - `OPENAI_API_KEY`: OpenAI API key for embeddings and AI generation
-- `OPENAI_MODEL`: OpenAI model for text generation (default: gpt-4o)
+- `OPENAI_MODEL`: OpenAI model for text generation (default: gpt-5)
+- `OPENAI_TEMPERATURE`: Temperature for AI generation (default: 1.0)
