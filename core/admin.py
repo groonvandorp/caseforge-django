@@ -12,7 +12,7 @@ from .models import (
     NodeDocument, NodeUsecaseCandidate, NodeBookmark, Portfolio,
     PortfolioItem, UserSettings, ModelAccess, NodeEmbedding, AdminSettings
 )
-from .monitoring import system_monitor
+# from .monitoring import system_monitor
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -262,7 +262,7 @@ class SystemMonitoringAdminSite(admin.AdminSite):
     def system_status_view(self, request):
         """System status dashboard view"""
         try:
-            status = system_monitor.get_system_status()
+            status = {} # system_monitor.get_system_status()
             context = {
                 **self.each_context(request),
                 'system_status': status,
@@ -282,7 +282,7 @@ class SystemMonitoringAdminSite(admin.AdminSite):
     def worker_health_api(self, request):
         """API endpoint for quick worker health status"""
         try:
-            health = system_monitor.get_worker_health_summary()
+            health = {} # system_monitor.get_worker_health_summary()
             return JsonResponse({'health': health})
         except Exception as e:
             return JsonResponse({'health': f"❌ Error: {str(e)}"}, status=500)
@@ -293,7 +293,7 @@ class SystemMonitoringAdminSite(admin.AdminSite):
         
         # Add worker health to admin index
         try:
-            context['worker_health'] = system_monitor.get_worker_health_summary()
+            context['worker_health'] = {} # system_monitor.get_worker_health_summary()
         except Exception as e:
             context['worker_health'] = f"❌ Monitor Error: {str(e)}"
         
