@@ -376,6 +376,40 @@ class ApiService {
     }
   }
   
+  // Search
+  async searchNodes(query: string, options?: {
+    model_version_id?: number;
+    model_key?: string;
+    level_filter?: number[];
+    limit?: number;
+    min_similarity?: number;
+  }): Promise<{
+    results: Array<{
+      node_id: number;
+      code: string;
+      name: string;
+      description: string;
+      level: number;
+      similarity_score?: number;
+      model_key: string;
+      parent_code?: string;
+      parent_name?: string;
+      search_type?: string;
+    }>;
+    search_type: string;
+    query: string;
+    total_results: number;
+    min_similarity?: number;
+  }> {
+    const requestData = {
+      query,
+      ...options
+    };
+    
+    const response = await this.apiClient.post('/search/', requestData);
+    return response.data;
+  }
+
   // Expose axios instance for direct API calls
   get api() {
     return this.apiClient;

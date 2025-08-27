@@ -24,6 +24,9 @@ urlpatterns = [
     path('settings/', views.user_settings_view, name='user_settings'),
     path('settings/update/', views.update_user_settings, name='update_user_settings'),
     
+    # Search
+    path('search/', views.semantic_search, name='semantic_search'),
+    
     # API routes
     path('', include(router.urls)),
 ]
