@@ -412,11 +412,13 @@ const TopBar: React.FC = () => {
               onChange={handleModelChange}
               label="Process Model"
             >
-              {appState.models.map((model) => (
-                <MenuItem key={model.id} value={model.model_key}>
-                  {model.name}
-                </MenuItem>
-              ))}
+              {appState.models
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((model) => (
+                  <MenuItem key={model.id} value={model.model_key}>
+                    {model.name}
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
         </Box>

@@ -25,6 +25,32 @@ import { ProcessNode, NodeDocument, NodeUsecaseCandidate } from '../types';
 import { apiService } from '../services/api';
 import { useAppState } from '../contexts/AppStateContext';
 
+// Helper function to improve text formatting for better readability
+const preprocessTextForDisplay = (text: string): string => {
+  if (!text) return '';
+  
+  // Convert numbered workflows like "(1)" to proper markdown lists
+  let processedText = text
+    // Convert (1), (2), (3) patterns to numbered lists
+    .replace(/\(\d+\)\s*/g, (match) => {
+      const number = match.match(/\((\d+)\)/)?.[1];
+      return `\n${number}. `;
+    })
+    // Convert "Key features:" style headers to markdown headers
+    .replace(/^([A-Z][^:]*:)(?=\s)/gm, '**$1**')
+    // Convert "Workflow:" to markdown header
+    .replace(/^(Workflow:)/gm, '\n### $1')
+    // Convert "Outcomes:" to markdown header  
+    .replace(/^(Outcomes:)/gm, '\n### $1')
+    // Add line breaks before sentences that start with capital letters after periods for better paragraph separation
+    .replace(/\.\s+([A-Z][^.]*(?:connects|integrates|ensures|produces|provides|enables|supports|includes|features|offers))/g, '.\n\n$1')
+    // Clean up multiple line breaks
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  
+  return processedText;
+};
+
 const Composer: React.FC = () => {
   const { state: appState } = useAppState();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -711,15 +737,64 @@ const Composer: React.FC = () => {
                             {/* Full Description */}
                             <Box sx={{ 
                               mb: 1.5,
-                              '& p': { fontSize: '0.875rem', lineHeight: 1.6, mb: 1, color: 'text.secondary' },
-                              '& ul, & ol': { fontSize: '0.875rem', pl: 2, color: 'text.secondary' },
-                              '& li': { mb: 0.5 },
-                              '& code': { backgroundColor: 'action.selected', px: 0.5, py: 0.25, borderRadius: 0.5 },
-                              '& pre': { backgroundColor: 'action.selected', p: 1, borderRadius: 1, overflow: 'auto' },
-                              '& strong': { fontWeight: 600 },
+                              '& p': { 
+                                fontSize: '0.875rem', 
+                                lineHeight: 1.7, 
+                                mb: 1.2, 
+                                color: 'text.secondary',
+                                textAlign: 'justify'
+                              },
+                              '& ul, & ol': { 
+                                fontSize: '0.875rem', 
+                                pl: 2.5, 
+                                color: 'text.secondary',
+                                mb: 1.2
+                              },
+                              '& li': { 
+                                mb: 0.8, 
+                                lineHeight: 1.6,
+                                '& p': { mb: 0.5 }
+                              },
+                              '& h1, & h2, & h3, & h4, & h5, & h6': {
+                                fontWeight: 600,
+                                color: 'text.primary',
+                                mt: 1.5,
+                                mb: 0.8
+                              },
+                              '& code': { 
+                                backgroundColor: 'action.selected', 
+                                px: 0.5, 
+                                py: 0.25, 
+                                borderRadius: 0.5,
+                                fontSize: '0.8125rem',
+                                fontFamily: 'monospace'
+                              },
+                              '& pre': { 
+                                backgroundColor: 'action.selected', 
+                                p: 1.5, 
+                                borderRadius: 1, 
+                                overflow: 'auto',
+                                fontSize: '0.8125rem',
+                                '& code': { 
+                                  backgroundColor: 'transparent',
+                                  p: 0
+                                }
+                              },
+                              '& strong': { fontWeight: 600, color: 'text.primary' },
                               '& em': { fontStyle: 'italic' },
+                              '& blockquote': {
+                                borderLeft: '4px solid',
+                                borderLeftColor: 'primary.main',
+                                pl: 2,
+                                py: 0.5,
+                                backgroundColor: 'action.hover',
+                                fontStyle: 'italic',
+                                '& p': { mb: 0 }
+                              }
                             }}>
-                              <ReactMarkdown>{uc.description}</ReactMarkdown>
+                              <ReactMarkdown>
+                                {preprocessTextForDisplay(uc.description)}
+                              </ReactMarkdown>
                             </Box>
                             
                             {/* Impact Assessment */}
@@ -729,15 +804,64 @@ const Composer: React.FC = () => {
                                   Impact Assessment
                                 </Typography>
                                 <Box sx={{ 
-                                  '& p': { fontSize: '0.875rem', lineHeight: 1.6, mb: 1, color: 'text.secondary' },
-                                  '& ul, & ol': { fontSize: '0.875rem', pl: 2, color: 'text.secondary' },
-                                  '& li': { mb: 0.5 },
-                                  '& code': { backgroundColor: 'action.selected', px: 0.5, py: 0.25, borderRadius: 0.5 },
-                                  '& pre': { backgroundColor: 'action.selected', p: 1, borderRadius: 1, overflow: 'auto' },
-                                  '& strong': { fontWeight: 600 },
+                                  '& p': { 
+                                    fontSize: '0.875rem', 
+                                    lineHeight: 1.7, 
+                                    mb: 1.2, 
+                                    color: 'text.secondary',
+                                    textAlign: 'justify'
+                                  },
+                                  '& ul, & ol': { 
+                                    fontSize: '0.875rem', 
+                                    pl: 2.5, 
+                                    color: 'text.secondary',
+                                    mb: 1.2
+                                  },
+                                  '& li': { 
+                                    mb: 0.8, 
+                                    lineHeight: 1.6,
+                                    '& p': { mb: 0.5 }
+                                  },
+                                  '& h1, & h2, & h3, & h4, & h5, & h6': {
+                                    fontWeight: 600,
+                                    color: 'text.primary',
+                                    mt: 1.5,
+                                    mb: 0.8
+                                  },
+                                  '& code': { 
+                                    backgroundColor: 'action.selected', 
+                                    px: 0.5, 
+                                    py: 0.25, 
+                                    borderRadius: 0.5,
+                                    fontSize: '0.8125rem',
+                                    fontFamily: 'monospace'
+                                  },
+                                  '& pre': { 
+                                    backgroundColor: 'action.selected', 
+                                    p: 1.5, 
+                                    borderRadius: 1, 
+                                    overflow: 'auto',
+                                    fontSize: '0.8125rem',
+                                    '& code': { 
+                                      backgroundColor: 'transparent',
+                                      p: 0
+                                    }
+                                  },
+                                  '& strong': { fontWeight: 600, color: 'text.primary' },
                                   '& em': { fontStyle: 'italic' },
+                                  '& blockquote': {
+                                    borderLeft: '4px solid',
+                                    borderLeftColor: 'primary.main',
+                                    pl: 2,
+                                    py: 0.5,
+                                    backgroundColor: 'action.hover',
+                                    fontStyle: 'italic',
+                                    '& p': { mb: 0 }
+                                  }
                                 }}>
-                                  <ReactMarkdown>{uc.impact_assessment}</ReactMarkdown>
+                                  <ReactMarkdown>
+                                    {preprocessTextForDisplay(uc.impact_assessment)}
+                                  </ReactMarkdown>
                                 </Box>
                               </Box>
                             )}
