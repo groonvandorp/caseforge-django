@@ -34,6 +34,8 @@ const Composer: React.FC = () => {
   const [processDetails, setProcessDetails] = useState<NodeDocument | null>(null);
   const [nodeDocuments, setNodeDocuments] = useState<NodeDocument[]>([]);
   const [usecaseCandidates, setUsecaseCandidates] = useState<NodeUsecaseCandidate[]>([]);
+  const [highlightedUsecaseId, setHighlightedUsecaseId] = useState<number | null>(null);
+  const [expandedNodeIds, setExpandedNodeIds] = useState<number[]>([]);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [taskProgress, setTaskProgress] = useState<{
     current: number;
@@ -43,6 +45,19 @@ const Composer: React.FC = () => {
   const [loadingUsecases, setLoadingUsecases] = useState(false);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
 
+
+  // Function to expand tree path to show a specific node
+  const expandPathToNode = async (nodeId: number) => {
+    try {
+      console.log('Composer: Expanding path to node:', nodeId);
+      const ancestors = await apiService.getNodeAncestors(nodeId);
+      const ancestorIds = ancestors.map(node => node.id);
+      console.log('Composer: Setting expanded nodes to ancestors:', ancestorIds);
+      setExpandedNodeIds(ancestorIds);
+    } catch (error) {
+      console.error('Composer: Failed to get ancestors for node expansion:', error);
+    }
+  };
 
   // Reset state when model changes
   useEffect(() => {
@@ -56,17 +71,29 @@ const Composer: React.FC = () => {
   useEffect(() => {
     const processCode = searchParams.get('processCode');
     const nodeId = searchParams.get('nodeId');
-    console.log('Composer: processCode from URL:', processCode, 'nodeId:', nodeId, 'selectedModel:', selectedModel, 'selectedNode:', selectedNode?.id);
+    const usecaseId = searchParams.get('usecaseId');
+    console.log('Composer: processCode from URL:', processCode, 'nodeId:', nodeId, 'usecaseId:', usecaseId, 'selectedModel:', selectedModel, 'selectedNode:', selectedNode?.id);
     
-    if (!selectedNode && selectedModel) {
-      if (nodeId) {
+    if (selectedModel) {
+      if (nodeId && (!selectedNode || selectedNode.id !== parseInt(nodeId))) {
         console.log('Composer: Loading process from node ID:', nodeId);
         const loadProcessFromId = async () => {
           try {
             const process = await apiService.getNode(parseInt(nodeId));
             console.log('Composer: Successfully loaded process from ID:', process);
+            console.log('Composer: Requested nodeId was:', nodeId, 'but got process with ID:', process.id);
             setSelectedNode(process);
-            // Clear the URL parameter after loading
+            
+            // Expand tree path to show the selected node
+            await expandPathToNode(process.id);
+            
+            // If there's a usecaseId, set it for highlighting
+            if (usecaseId) {
+              console.log('Composer: Setting highlighted usecase ID:', usecaseId);
+              setHighlightedUsecaseId(parseInt(usecaseId));
+            }
+            
+            // Clear the URL parameters after loading
             setSearchParams({});
           } catch (error) {
             console.error(`Composer: Failed to load process with ID ${nodeId}:`, error);
@@ -90,6 +117,26 @@ const Composer: React.FC = () => {
       }
     }
   }, [searchParams, selectedModel, selectedNode, setSearchParams]);
+
+  // Auto-scroll to highlighted use case after use cases are loaded
+  useEffect(() => {
+    if (highlightedUsecaseId && usecaseCandidates.length > 0) {
+      // Small delay to ensure the DOM is updated
+      setTimeout(() => {
+        const element = document.getElementById(`usecase-${highlightedUsecaseId}`);
+        if (element) {
+          console.log('Composer: Scrolling to highlighted use case:', highlightedUsecaseId);
+          element.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          });
+          // Clear the highlight after a few seconds
+          setTimeout(() => setHighlightedUsecaseId(null), 5000);
+        }
+      }, 100);
+    }
+  }, [highlightedUsecaseId, usecaseCandidates]);
 
   const loadNodeData = useCallback(async () => {
     if (!selectedNode) return;
@@ -373,6 +420,7 @@ const Composer: React.FC = () => {
                 modelKey={selectedModel}
                 onNodeSelect={handleNodeSelect}
                 selectedNodeId={selectedNode?.id}
+                expandedNodeIds={expandedNodeIds}
               />
             )}
           </Paper>
@@ -564,15 +612,46 @@ const Composer: React.FC = () => {
                     {/* Use Case Candidates as Expandable Cards */}
                     {usecaseCandidates.map((uc, index) => {
                       const hasSpec = findSpecDocument(uc);
+                      const isHighlighted = highlightedUsecaseId === uc.id;
                       return (
-                        <Card key={uc.id} variant="outlined" sx={{ mb: 1.5 }}>
+                        <Card 
+                          key={uc.id} 
+                          variant="outlined" 
+                          id={`usecase-${uc.id}`}
+                          sx={{ 
+                            mb: 1.5,
+                            ...(isHighlighted && {
+                              border: '2px solid #1976d2',
+                              backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                              boxShadow: '0 0 0 1px rgba(25, 118, 210, 0.2)'
+                            })
+                          }}
+                        >
                           <CardContent>
                             {/* Header with Title and Actions */}
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                               <Box sx={{ flex: 1, mr: 2 }}>
-                                <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600, mb: 0.5 }}>
-                                  {uc.title}
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                  <Chip 
+                                    label={uc.candidate_uid} 
+                                    size="small" 
+                                    color="primary" 
+                                    variant="filled"
+                                    sx={{ fontSize: '0.75rem', fontWeight: 600 }}
+                                  />
+                                  <Typography 
+                                    variant="h6" 
+                                    sx={{ 
+                                      fontSize: '1rem', 
+                                      fontWeight: 600,
+                                      ...(isHighlighted && {
+                                        color: '#1976d2'
+                                      })
+                                    }}
+                                  >
+                                    {isHighlighted && '🎯 '}{uc.title}
+                                  </Typography>
+                                </Box>
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
                                   {uc.complexity_score && (
                                     <Chip 
@@ -630,9 +709,46 @@ const Composer: React.FC = () => {
                             </Box>
                             
                             {/* Full Description */}
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.6 }}>
-                              {uc.description}
-                            </Typography>
+                            <Box sx={{ mb: 1.5 }}>
+                              {uc.description.split(/(?=\b(?:What it does|Integration|Workflow|Expected outcomes|Business users):|(?:\d+\)))/g)
+                                .filter(part => part.trim())
+                                .map((part, index) => {
+                                  const trimmedPart = part.trim();
+                                  
+                                  // Check if this is a section header
+                                  if (trimmedPart.match(/^(What it does|Integration|Workflow|Expected outcomes|Business users):/)) {
+                                    const [header, ...contentParts] = trimmedPart.split(':');
+                                    const content = contentParts.join(':').trim();
+                                    
+                                    return (
+                                      <Box key={index} sx={{ mb: 1 }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+                                          {header}:
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                                          {content}
+                                        </Typography>
+                                      </Box>
+                                    );
+                                  }
+                                  
+                                  // Check if this is a numbered item
+                                  if (trimmedPart.match(/^\d+\)/)) {
+                                    return (
+                                      <Typography key={index} variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, mb: 0.5, pl: 1 }}>
+                                        {trimmedPart}
+                                      </Typography>
+                                    );
+                                  }
+                                  
+                                  // Regular paragraph
+                                  return (
+                                    <Typography key={index} variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, mb: 1 }}>
+                                      {trimmedPart}
+                                    </Typography>
+                                  );
+                                })}
+                            </Box>
                             
                             {/* Impact Assessment */}
                             {uc.impact_assessment && (

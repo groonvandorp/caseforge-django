@@ -54,6 +54,55 @@ django-port/
 - **Frontend**: React with TypeScript
 - **Authentication**: JWT tokens (PyJWT)
 - **CORS**: django-corsheaders
+- **AI Integration**: OpenAI API (GPT-5, text-embedding-3-small)
+- **Search**: Semantic embeddings with cosine similarity
+
+## Current System Status
+
+### ✅ Completed Features
+
+#### Core Infrastructure
+- **Process Model Management**: Full CRUD operations for hierarchical business process models
+- **User Authentication**: JWT-based authentication with secure token management
+- **Document Management**: Comprehensive document storage and retrieval system
+- **Admin Interface**: Custom Django admin with system monitoring and configuration
+
+#### AI-Powered Content Generation
+- **Process Details**: 1,500+ comprehensive process documentations generated via GPT-5
+- **Use Case Candidates**: 14,205+ AI-generated use cases for process automation and optimization
+- **Batch Processing**: Scalable OpenAI Batch API integration for cost-effective AI generation
+- **Content Quality**: High-quality, business-ready documentation with structured metadata
+
+#### Advanced Search System
+- **Semantic Search**: Full embedding-based search across processes and use cases
+- **Scope Filtering**: Targeted search within "Processes", "AI Use Cases", or "All"
+- **Hybrid Search**: Combines semantic and text-based search for comprehensive coverage
+- **Real-time Results**: Interactive search with similarity scoring and instant navigation
+
+#### User Experience
+- **Smart Navigation**: Click-to-navigate from search results to detailed views
+- **Tree Auto-expansion**: Automatic hierarchy expansion to show selected nodes
+- **Use Case Highlighting**: Visual emphasis and auto-scroll to selected use cases
+- **Responsive Design**: Mobile-friendly interface with modern Material-UI components
+
+### 📊 Key Metrics
+
+#### Content Coverage
+- **Process Nodes**: 1,545+ hierarchical business processes
+- **Process Documentation**: 1,500+ detailed process descriptions (97% coverage)
+- **AI Use Cases**: 14,205+ automation and optimization opportunities
+- **Semantic Embeddings**: 100% coverage for both processes and use cases
+
+#### Search Performance
+- **Embedding Dimensions**: 1536 (OpenAI text-embedding-3-small)
+- **Search Response Time**: Sub-second for most queries
+- **Similarity Threshold**: 30% minimum for relevant results
+- **Result Quality**: High-precision semantic matching with contextual understanding
+
+#### System Reliability
+- **Batch Success Rate**: 97%+ for process details, 100% for use case embeddings
+- **API Stability**: Robust error handling with graceful fallbacks
+- **Data Integrity**: Consistent relationships across all content types
 
 ## Data Model
 
@@ -259,49 +308,141 @@ python manage.py test
 python manage.py collectstatic
 ```
 
-## Node Embeddings System
+## Enhanced Search System
 
-### How Embeddings Are Created
+CaseForge implements a comprehensive semantic search system that enables intelligent discovery of business processes and AI use cases through natural language queries.
 
-The system uses OpenAI's `text-embedding-3-small` model to create embeddings for process nodes, enabling semantic search functionality.
+### Search Components
 
-#### Embedding Generation Process:
+#### 1. Enhanced Search Service (`api/enhanced_search_service.py`)
+- **Scope Filtering**: Search across "processes", "usecases", or "all"
+- **Search Types**: Semantic (embedding-based), text-based, or hybrid
+- **Similarity Scoring**: Cosine similarity with configurable thresholds
+- **Result Normalization**: Consistent response format across search types
 
-1. **Celery Task**: `generate_embeddings_task` in `api/tasks.py:297`
-   - Accepts a list of node IDs
-   - Creates text representation: `"{node.name}. {node.description}"`
-   - Calls OpenAI API to generate embeddings
-   - Stores results in `NodeEmbedding` model
+#### 2. Frontend Search Interface (`frontend/src/components/Layout/TopBar.tsx`)
+- **Scope Selector**: Toggle between "Processes | AI Use Cases | All"
+- **Real-time Search**: Live results with similarity scores
+- **Smart Navigation**: Click results to navigate to detailed views
+- **Visual Feedback**: Result previews with categories and similarity percentages
 
-2. **OpenAI Service**: `api/services.py:199-230`
-   - Uses `AsyncOpenAI` client
-   - Model: `text-embedding-3-small`
-   - Returns 1536-dimensional vectors
-   - Stored as JSON in database
+### Embeddings Infrastructure
 
-3. **Storage**: `NodeEmbedding` model
-   - One-to-one relationship with `ProcessNode`
-   - Fields: `embedding_vector` (JSON), `embedding_model`, `created_at`
+#### Process Node Embeddings
+- **Storage**: `NodeEmbedding` model (one-to-one with ProcessNode)
+- **Text Format**: `"{node.name}. {node.description}"`
+- **Generation**: Batch processing via OpenAI Batch API
+- **Coverage**: All process nodes with embeddings for semantic search
 
-#### When Embeddings Are Created:
+#### AI Use Case Embeddings  
+- **Storage**: `usecase_embedding` table
+- **Coverage**: 14,205 AI-generated use cases (100% coverage)
+- **Text Format**: Combined title, description, and impact assessment
+- **Status**: ✅ Fully populated and operational
 
-- **Manual trigger**: Via Celery task `generate_embeddings_task`
-- **Not automatic**: Embeddings must be explicitly generated
-- **Bulk processing**: Can process multiple nodes at once
+### Search API Endpoints
 
-#### Using Embeddings for Search:
+#### `/api/search/` (Enhanced Search)
+**Request Format:**
+```json
+{
+  "query": "search term",
+  "model_key": "apqc_pcf", 
+  "scope": "processes|usecases|all",
+  "search_type": "hybrid|semantic|text",
+  "limit": 10,
+  "min_similarity": 0.3
+}
+```
 
-The `ContextService._find_similar_nodes()` method (currently placeholder) is designed to:
-- Calculate cosine similarity between query embedding and node embeddings
-- Return nodes ranked by similarity score
-- Support cross-category search when enabled
+**Response Format:**
+```json
+{
+  "query": "search term",
+  "scope": "all",
+  "search_type": "hybrid",
+  "processes": [
+    {
+      "id": 47,
+      "code": "2.3",
+      "name": "Develop products and services", 
+      "description": "...",
+      "similarity": 0.85,
+      "type": "process",
+      "parent_name": "...",
+      "is_leaf": true
+    }
+  ],
+  "usecases": [
+    {
+      "id": 123,
+      "title": "AI-Powered Product Recommendation",
+      "description": "...",
+      "similarity": 0.78,
+      "type": "usecase",
+      "node_id": 47,
+      "category": "analytics"
+    }
+  ],
+  "total_count": 15
+}
+```
 
-#### Important Notes:
+### Navigation System
 
-- **OpenAI API Key Required**: Set via Admin Settings or environment variable
-- **Async Processing**: Uses Celery for background processing
-- **Embedding Model**: Fixed to `text-embedding-3-small` for consistency
-- **Text Format**: Combines node name and description for context
+#### Smart Navigation (`frontend/src/pages/Composer.tsx`)
+- **URL Parameters**: `/composer?nodeId=47&usecaseId=123`
+- **Tree Auto-expansion**: Automatically expands hierarchy to selected node
+- **Use Case Highlighting**: Visual emphasis on selected use cases
+- **Ancestor Loading**: Calls `/api/nodes/{id}/ancestors/` for tree expansion
+
+#### Tree Integration (`frontend/src/components/Process/SimpleProcessTree.tsx`)
+- **Selected Node Highlighting**: Visual indication of current selection
+- **Expanded Path**: Controlled expansion via `expandedNodeIds` prop
+- **Navigation Callbacks**: Seamless integration with search results
+
+### Technical Implementation
+
+#### Backend Search Flow
+1. **Query Processing**: Parse search parameters and validate scope
+2. **Embedding Generation**: Create query embedding using OpenAI API
+3. **Similarity Calculation**: Compare against stored embeddings using cosine similarity
+4. **Result Filtering**: Apply similarity thresholds and scope filters
+5. **Response Formatting**: Normalize results for consistent frontend consumption
+
+#### Frontend Search Flow  
+1. **User Input**: Type query and select scope via toggle buttons
+2. **API Request**: Call enhanced search endpoint with parameters
+3. **Response Normalization**: Handle both legacy and new response formats
+4. **Result Display**: Show results with similarity scores and categories
+5. **Navigation**: Click handlers for seamless navigation to detailed views
+
+### Search Performance
+
+#### Semantic Search Capabilities
+- **Process Search**: Semantic understanding of business process descriptions
+- **Use Case Search**: AI-powered matching of automation and optimization opportunities  
+- **Cross-Category Search**: Find related concepts across different process areas
+- **Similarity Scoring**: Relevance-based ranking with configurable thresholds
+
+#### Current Statistics
+- **Process Embeddings**: All process nodes covered
+- **Use Case Embeddings**: 14,205 AI use cases (100% coverage)
+- **Search Response**: Sub-second response times for most queries
+- **Embedding Model**: OpenAI `text-embedding-3-small` (1536 dimensions)
+
+### Configuration
+
+#### Required Settings (AdminSettings)
+- `openai_api_key`: OpenAI API key for embedding generation
+- `openai_model`: Model for text generation (default: gpt-5)
+- `openai_temperature`: Temperature for AI generation (default: 1.0)
+
+#### Search Parameters
+- **Similarity Threshold**: Default 0.3 (30% similarity minimum)
+- **Result Limits**: Configurable per search type
+- **Scope Options**: processes, usecases, all
+- **Search Types**: semantic, text, hybrid (recommended)
 
 ## Batch Processing System
 
