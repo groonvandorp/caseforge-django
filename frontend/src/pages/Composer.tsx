@@ -709,45 +709,17 @@ const Composer: React.FC = () => {
                             </Box>
                             
                             {/* Full Description */}
-                            <Box sx={{ mb: 1.5 }}>
-                              {uc.description.split(/(?=\b(?:What it does|Integration|Workflow|Expected outcomes|Business users):|(?:\d+\)))/g)
-                                .filter(part => part.trim())
-                                .map((part, index) => {
-                                  const trimmedPart = part.trim();
-                                  
-                                  // Check if this is a section header
-                                  if (trimmedPart.match(/^(What it does|Integration|Workflow|Expected outcomes|Business users):/)) {
-                                    const [header, ...contentParts] = trimmedPart.split(':');
-                                    const content = contentParts.join(':').trim();
-                                    
-                                    return (
-                                      <Box key={index} sx={{ mb: 1 }}>
-                                        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
-                                          {header}:
-                                        </Typography>
-                                        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                                          {content}
-                                        </Typography>
-                                      </Box>
-                                    );
-                                  }
-                                  
-                                  // Check if this is a numbered item
-                                  if (trimmedPart.match(/^\d+\)/)) {
-                                    return (
-                                      <Typography key={index} variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, mb: 0.5, pl: 1 }}>
-                                        {trimmedPart}
-                                      </Typography>
-                                    );
-                                  }
-                                  
-                                  // Regular paragraph
-                                  return (
-                                    <Typography key={index} variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, mb: 1 }}>
-                                      {trimmedPart}
-                                    </Typography>
-                                  );
-                                })}
+                            <Box sx={{ 
+                              mb: 1.5,
+                              '& p': { fontSize: '0.875rem', lineHeight: 1.6, mb: 1, color: 'text.secondary' },
+                              '& ul, & ol': { fontSize: '0.875rem', pl: 2, color: 'text.secondary' },
+                              '& li': { mb: 0.5 },
+                              '& code': { backgroundColor: 'action.selected', px: 0.5, py: 0.25, borderRadius: 0.5 },
+                              '& pre': { backgroundColor: 'action.selected', p: 1, borderRadius: 1, overflow: 'auto' },
+                              '& strong': { fontWeight: 600 },
+                              '& em': { fontStyle: 'italic' },
+                            }}>
+                              <ReactMarkdown>{uc.description}</ReactMarkdown>
                             </Box>
                             
                             {/* Impact Assessment */}
@@ -756,9 +728,17 @@ const Composer: React.FC = () => {
                                 <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
                                   Impact Assessment
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                                  {uc.impact_assessment}
-                                </Typography>
+                                <Box sx={{ 
+                                  '& p': { fontSize: '0.875rem', lineHeight: 1.6, mb: 1, color: 'text.secondary' },
+                                  '& ul, & ol': { fontSize: '0.875rem', pl: 2, color: 'text.secondary' },
+                                  '& li': { mb: 0.5 },
+                                  '& code': { backgroundColor: 'action.selected', px: 0.5, py: 0.25, borderRadius: 0.5 },
+                                  '& pre': { backgroundColor: 'action.selected', p: 1, borderRadius: 1, overflow: 'auto' },
+                                  '& strong': { fontWeight: 600 },
+                                  '& em': { fontStyle: 'italic' },
+                                }}>
+                                  <ReactMarkdown>{uc.impact_assessment}</ReactMarkdown>
+                                </Box>
                               </Box>
                             )}
                             

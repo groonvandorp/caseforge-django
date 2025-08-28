@@ -56,7 +56,7 @@ class ProcessNodeTreeSerializer(serializers.ModelSerializer):
         fields = ['id', 'code', 'name', 'level', 'is_leaf', 'children']
     
     def get_children(self, obj):
-        if obj.level >= 4:  # Limit tree depth
+        if obj.level >= 6:  # Allow up to level 5 nodes (6 would be children of level 5)
             return []
         children = obj.children.order_by('display_order', 'name')
         return ProcessNodeTreeSerializer(children, many=True).data
