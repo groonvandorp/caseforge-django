@@ -554,11 +554,10 @@ class ContextService:
 
 class DocumentService:
     @staticmethod
-    def save_document(user, node: ProcessNode, document_type: str, content: str, 
+    def save_document(node: ProcessNode, document_type: str, content: str, 
                      title: str = None, meta_data: Dict = None) -> NodeDocument:
-        """Save a document with proper user scoping"""
+        """Save a shared document"""
         document = NodeDocument.objects.create(
-            user=user,
             node=node,
             document_type=document_type,
             title=title,
@@ -568,11 +567,10 @@ class DocumentService:
         return document
     
     @staticmethod
-    def find_document(user, node: ProcessNode, document_type: str) -> NodeDocument:
-        """Find existing document for a node and user"""
+    def find_document(node: ProcessNode, document_type: str) -> NodeDocument:
+        """Find existing document for a node"""
         try:
             return NodeDocument.objects.get(
-                user=user,
                 node=node,
                 document_type=document_type
             )

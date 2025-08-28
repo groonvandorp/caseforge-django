@@ -426,7 +426,7 @@ class NodeDocumentViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        queryset = NodeDocument.objects.filter(user=self.request.user)
+        queryset = NodeDocument.objects.all()
         
         # Filter by model_key if provided
         model_key = self.request.query_params.get('model_key')
@@ -445,7 +445,7 @@ class NodeDocumentViewSet(ModelViewSet):
         return queryset.select_related('node').order_by('-created_at')
     
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save()
     
     @action(detail=False, methods=['get'])
     def by_node(self, request):
@@ -469,10 +469,10 @@ class NodeUsecaseCandidateViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        return NodeUsecaseCandidate.objects.filter(user=self.request.user)
+        return NodeUsecaseCandidate.objects.all()
     
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save()
     
     @action(detail=False, methods=['get'])
     def by_node(self, request):
@@ -618,7 +618,6 @@ def dashboard_specs(request):
         return Response({'error': 'model_key required'}, status=400)
     
     specs = NodeDocument.objects.filter(
-        user=request.user,
         document_type='usecase_spec',
         node__model_version__model__model_key=model_key,
         node__model_version__is_current=True

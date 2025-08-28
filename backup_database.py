@@ -11,6 +11,7 @@ import sqlite3
 import django
 import gzip
 import json
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -261,7 +262,7 @@ def main():
     print(f"📁 Backup directory: {backup_dir}")
     
     success_count = 0
-    total_operations = 4
+    total_operations = 5
     
     # 1. SQLite file backup
     if backup_sqlite_file(backup_dir):
@@ -275,7 +276,18 @@ def main():
     if create_data_summary(backup_dir):
         success_count += 1
     
-    # 4. Restore script
+    # 4. Software state capture
+    print("📋 Capturing software state...")
+    try:
+        subprocess.run([sys.executable, 'capture_software_state.py', backup_dir], check=True)
+        print("   ✅ Software state captured")
+        success_count += 1
+    except subprocess.CalledProcessError as e:
+        print(f"   ❌ Software state capture failed: {e}")
+    except Exception as e:
+        print(f"   ❌ Software state error: {e}")
+    
+    # 5. Restore script
     if create_restore_script(backup_dir):
         success_count += 1
     

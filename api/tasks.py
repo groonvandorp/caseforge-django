@@ -176,7 +176,6 @@ def generate_process_details_task(self, user_id: int, node_id: int, include_bran
         
         # Save document
         document = DocumentService.save_document(
-            user=user,
             node=node,
             document_type='process_details',
             content=markdown_content,
@@ -217,7 +216,6 @@ def generate_usecase_candidates_task(user_id: int, node_id: int, include_branch:
         try:
             process_details = NodeDocument.objects.get(
                 node=node,
-                user=user,
                 document_type='process_details'
             )
             context['process_details'] = process_details.content
@@ -242,7 +240,6 @@ def generate_usecase_candidates_task(user_id: int, node_id: int, include_branch:
             candidate_data_with_metadata['metadata']['model_key'] = node.model_version.model.model_key
             
             candidate = NodeUsecaseCandidate.objects.create(
-                user=user,
                 node=node,
                 candidate_uid=candidate_uid,
                 title=candidate_data.get('title', 'Untitled'),
@@ -266,7 +263,7 @@ def generate_usecase_specification_task(user_id: int, candidate_id: int):
     """Async task to generate detailed use case specification"""
     try:
         user = User.objects.get(id=user_id)
-        candidate = NodeUsecaseCandidate.objects.get(id=candidate_id, user=user)
+        candidate = NodeUsecaseCandidate.objects.get(id=candidate_id)
         
         # Get context
         context = ContextService.get_process_context(candidate.node)
@@ -277,7 +274,6 @@ def generate_usecase_specification_task(user_id: int, candidate_id: int):
         
         # Save document
         document = DocumentService.save_document(
-            user=user,
             node=candidate.node,
             document_type='usecase_spec',
             content=specification,

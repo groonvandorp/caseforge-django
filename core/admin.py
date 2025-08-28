@@ -101,10 +101,10 @@ class ProcessNodeAdmin(admin.ModelAdmin):
 
 @admin.register(NodeDocument)
 class NodeDocumentAdmin(admin.ModelAdmin):
-    list_display = ['title', 'document_type', 'node', 'user', 'created_at']
+    list_display = ['title', 'document_type', 'node', 'created_at']
     list_filter = ['document_type', 'created_at']
-    search_fields = ['title', 'node__code', 'node__name', 'user__username']
-    raw_id_fields = ['node', 'user']
+    search_fields = ['title', 'node__code', 'node__name']
+    raw_id_fields = ['node']
     readonly_fields = ['created_at', 'updated_at']
     actions = ['delete_process_details']
     
@@ -135,10 +135,10 @@ class NodeDocumentAdmin(admin.ModelAdmin):
 
 @admin.register(NodeUsecaseCandidate)
 class NodeUsecaseCandidateAdmin(admin.ModelAdmin):
-    list_display = ['title', 'node', 'user', 'complexity_score', 'created_at']
+    list_display = ['title', 'node', 'complexity_score', 'created_at']
     list_filter = ['complexity_score', 'created_at']
-    search_fields = ['title', 'candidate_uid', 'node__code', 'user__username']
-    raw_id_fields = ['node', 'user']
+    search_fields = ['title', 'candidate_uid', 'node__code']
+    raw_id_fields = ['node']
     readonly_fields = ['created_at']
 
 
