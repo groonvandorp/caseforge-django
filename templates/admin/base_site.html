@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Onwell Admin{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+    <a href="{% url 'admin:index' %}">
+        <h1 style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px;">🌊</span>
+            <span>Onwell Admin</span>
+        </h1>
+    </a>
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/onwell-theme.css' %}">
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static 'admin/js/theme-switcher.js' %}"></script>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

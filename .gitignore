@@ -1,0 +1,66 @@
+# Django
+*.pyc
+__pycache__/
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+
+# Logs
+*.log
+logs/
+
+# Backups and data
+database_backups/
+embeddings_batch/
+embeddings_batch_*/
+*.json.gz
+*.sqlite3.gz
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React / Frontend
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Temporary files
+*.tmp
+*.bak
+current_software_state.json

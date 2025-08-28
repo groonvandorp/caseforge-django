@@ -1,0 +1,421 @@
+/* Dark theme (default) */
+:root {
+    --primary: #264653;
+    --primary-fg: #ffffff;
+    
+    --body-fg: #eaf2ff;
+    --body-bg: #0b0f14;
+    --body-quiet-color: #a7c7bf;
+    --body-loud-color: #ffffff;
+    
+    --header-color: #eaf2ff;
+    --header-branding-color: var(--header-color);
+    --header-bg: #121820;
+    --header-link-color: #2a9d8f;
+    
+    --breadcrumbs-fg: #a7c7bf;
+    --breadcrumbs-link-fg: #2a9d8f;
+    --breadcrumbs-bg: #0f151d;
+    
+    --link-fg: #2a9d8f;
+    --link-hover-color: #52b69a;
+    --link-selected-fg: #52d273;
+    
+    --hairline-color: #1f3733;
+    --border-color: #1f3733;
+    
+    --error-fg: #e76f51;
+    
+    --message-success-bg: #122a24;
+    --message-warning-bg: #3d2c1f;
+    --message-error-bg: #3d1f1f;
+    
+    --darkened-bg: #0f151d;
+    --selected-bg: #17352c;
+    --selected-row: #122a24;
+    
+    --button-fg: #ffffff;
+    --button-bg: #1a3d38;
+    --button-hover-bg: #21564e;
+    --default-button-bg: #2a9d8f;
+    --default-button-hover-bg: #52b69a;
+    --close-button-bg: #5a1a1a;
+    --close-button-hover-bg: #6b2020;
+    --delete-button-bg: #5a1a1a;
+    --delete-button-hover-bg: #6b2020;
+}
+
+/* Light theme */
+:root[data-theme="light"] {
+    --primary: #2a9d8f;
+    --primary-fg: #ffffff;
+    
+    --body-fg: #0d1b2a;
+    --body-bg: #f7f9fc;
+    --body-quiet-color: #5c6b7a;
+    --body-loud-color: #0d1b2a;
+    
+    --header-color: #0d1b2a;
+    --header-branding-color: var(--header-color);
+    --header-bg: #ffffff;
+    --header-link-color: #1e6f5c;
+    
+    --breadcrumbs-fg: #5c6b7a;
+    --breadcrumbs-link-fg: #1e6f5c;
+    --breadcrumbs-bg: #ffffff;
+    
+    --link-fg: #1e6f5c;
+    --link-hover-color: #2a9d8f;
+    --link-selected-fg: #1e6f5c;
+    
+    --hairline-color: #dde5ee;
+    --border-color: #dde5ee;
+    
+    --error-fg: #b23c2a;
+    
+    --message-success-bg: #e6f4ee;
+    --message-warning-bg: #fef3e2;
+    --message-error-bg: #fbe3e3;
+    
+    --darkened-bg: #ffffff;
+    --selected-bg: #d6efe0;
+    --selected-row: #e8f5e9;
+    
+    --button-fg: #0d1b2a;
+    --button-bg: #e6f4ee;
+    --button-hover-bg: #d8efe4;
+    --default-button-bg: #2a9d8f;
+    --default-button-hover-bg: #1e6f5c;
+    --close-button-bg: #fbe3e3;
+    --close-button-hover-bg: #f5cccc;
+    --delete-button-bg: #fbe3e3;
+    --delete-button-hover-bg: #f5cccc;
+}
+
+body {
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+#header {
+    background: var(--header-bg);
+    color: var(--header-color);
+    border-bottom: 1px solid var(--hairline-color);
+}
+
+#branding h1 {
+    color: var(--header-branding-color);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+#branding h1, #branding h1 a:link, #branding h1 a:visited {
+    color: var(--header-branding-color);
+}
+
+#user-tools a:link, #user-tools a:visited {
+    color: var(--header-link-color);
+}
+
+#user-tools a:hover, #user-tools a:active {
+    color: var(--link-hover-color);
+}
+
+.module {
+    background: #121820;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+}
+
+.module h2, .module caption, .inline-group h2 {
+    background: #1a3d38;
+    color: var(--body-fg);
+    border-radius: 10px 10px 0 0;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.4px;
+}
+
+#changelist .actions {
+    background: var(--darkened-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 20px;
+}
+
+#changelist .paginator {
+    background: var(--darkened-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.object-tools {
+    margin-bottom: 20px;
+}
+
+.object-tools a:link, .object-tools a:visited {
+    background: var(--button-bg);
+    color: var(--button-fg);
+    border: 1px solid var(--default-button-bg);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 600;
+}
+
+.object-tools a:hover, .object-tools a:active {
+    background: var(--button-hover-bg);
+}
+
+input[type="text"], input[type="password"], input[type="email"], 
+input[type="url"], input[type="tel"], input[type="number"], 
+input[type="date"], input[type="datetime-local"], input[type="time"],
+textarea, select, .vTextField {
+    background: var(--darkened-bg);
+    color: var(--body-fg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+input[type="text"]:focus, input[type="password"]:focus, 
+input[type="email"]:focus, input[type="url"]:focus, 
+input[type="tel"]:focus, input[type="number"]:focus, 
+input[type="date"]:focus, input[type="datetime-local"]:focus, 
+input[type="time"]:focus, textarea:focus, select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.1);
+}
+
+.button, input[type="submit"], input[type="button"], .submit-row input {
+    background: var(--button-bg);
+    color: var(--button-fg);
+    border: 1px solid var(--default-button-bg);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.button:hover, input[type="submit"]:hover, 
+input[type="button"]:hover, .submit-row input:hover {
+    background: var(--button-hover-bg);
+}
+
+.button.default, input[type="submit"].default, .submit-row input.default {
+    background: var(--default-button-bg);
+    border-color: var(--default-button-bg);
+}
+
+.button.default:hover, input[type="submit"].default:hover, 
+.submit-row input.default:hover {
+    background: var(--default-button-hover-bg);
+}
+
+.deletelink, .submit-row .deletelink-box .deletelink {
+    background: var(--delete-button-bg);
+    border-color: var(--delete-button-bg);
+}
+
+.deletelink:hover, .submit-row .deletelink-box .deletelink:hover {
+    background: var(--delete-button-hover-bg);
+}
+
+#changelist table {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#changelist table thead th {
+    background: #1a3d38;
+    color: var(--body-fg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px;
+    font-weight: 600;
+}
+
+#changelist table tbody tr {
+    background: var(--darkened-bg);
+    border-bottom: 1px solid var(--hairline-color);
+}
+
+#changelist table tbody tr:hover {
+    background: var(--selected-row);
+}
+
+#changelist table tbody tr.selected {
+    background: var(--selected-bg);
+}
+
+.dashboard #content {
+    width: auto;
+}
+
+.dashboard .module table th {
+    background: #1a3d38;
+}
+
+.dashboard .module table td {
+    background: var(--darkened-bg);
+}
+
+.dashboard .module table tr:hover td {
+    background: var(--selected-row);
+}
+
+.breadcrumbs {
+    background: var(--breadcrumbs-bg);
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--hairline-color);
+}
+
+.breadcrumbs a {
+    color: var(--breadcrumbs-link-fg);
+}
+
+.breadcrumbs a:hover {
+    color: var(--link-hover-color);
+}
+
+.errornote {
+    background: var(--message-error-bg);
+    border: 1px solid var(--error-fg);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 20px;
+}
+
+.success {
+    background: var(--message-success-bg);
+    border: 1px solid #52d273;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 20px;
+}
+
+.warning {
+    background: var(--message-warning-bg);
+    border: 1px solid #f4a261;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 20px;
+}
+
+fieldset {
+    background: var(--darkened-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.inline-group .tabular fieldset.module {
+    border-radius: 0;
+}
+
+.form-row {
+    border-bottom: 1px solid var(--hairline-color);
+    padding: 12px;
+}
+
+.form-row:last-child {
+    border-bottom: none;
+}
+
+.help, p.help, form p.help {
+    color: var(--body-quiet-color);
+    font-size: 12px;
+}
+
+a:link, a:visited {
+    color: var(--link-fg);
+    text-decoration: none;
+}
+
+a:hover, a:active {
+    color: var(--link-hover-color);
+}
+
+.calendar, .clock {
+    background: var(--darkened-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.calendar td.selected a, .calendar td.selected {
+    background: var(--selected-bg);
+}
+
+.calendar td a:hover, .timelist a:hover {
+    background: var(--selected-row);
+}
+
+.login #content-main {
+    background: #121820;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+}
+
+.login .form-row {
+    padding: 20px 0;
+}
+
+.login .submit-row {
+    padding: 20px 0 0;
+    text-align: center;
+}
+
+.selector-filter {
+    background: var(--darkened-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.selector-chosen select {
+    background: var(--darkened-bg);
+}
+
+.related-widget-wrapper-link {
+    color: var(--link-fg);
+}
+
+#nav-sidebar {
+    background: var(--darkened-bg);
+    border-right: 1px solid var(--hairline-color);
+}
+
+#nav-sidebar .current-app {
+    background: var(--selected-row);
+}
+
+#nav-sidebar .current-model {
+    background: var(--selected-bg);
+}
+
+.mini.quiet, .help, .inline-group .help {
+    color: var(--body-quiet-color);
+}
+
+body.popup .submit-row {
+    background: var(--darkened-bg);
+}
+
+.datetimeshortcuts {
+    color: var(--body-quiet-color);
+}
+
+.datetimeshortcuts a:link, .datetimeshortcuts a:visited {
+    color: var(--link-fg);
+}
+
+.datetimeshortcuts a:hover {
+    color: var(--link-hover-color);
+}

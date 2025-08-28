@@ -1,0 +1,39 @@
+# Core Django
+Django>=5.2.5
+djangorestframework>=3.16.1
+django-cors-headers>=4.7.0
+django-extensions>=4.1
+python-dotenv>=1.1.1
+
+# Database
+psycopg2-binary>=2.9.10
+
+# Background Tasks
+celery>=5.5.3
+redis>=6.4.0
+
+# AI & External APIs
+openai>=1.101
+requests>=2.31.0
+
+# Document Processing
+python-docx>=1.1.0
+pandas>=2.0.0
+openpyxl>=3.1.0
+numpy>=1.24.0
+
+# Authentication & Security
+PyJWT>=2.8.0
+
+# Production
+gunicorn>=21.2.0
+whitenoise>=6.5.0
+
+# Development
+pytest-django>=4.8.0
+black>=24.0.0
+isort>=5.13.0
+flake8>=7.0.0
+
+# System Monitoring
+psutil>=5.9.0
