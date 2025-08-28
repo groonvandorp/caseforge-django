@@ -124,9 +124,8 @@ const SimpleProcessTree: React.FC<SimpleProcessTreeProps> = ({
   };
 
   const handleNodeClick = (node: ProcessNode) => {
-    if (node.is_leaf) {
-      onNodeSelect(node);
-    }
+    // Allow selection of all nodes, not just leaf nodes
+    onNodeSelect(node);
   };
 
   const handleBookmarkToggle = async (event: React.MouseEvent, node: ProcessNode) => {
@@ -160,19 +159,28 @@ const SimpleProcessTree: React.FC<SimpleProcessTreeProps> = ({
           disablePadding
           sx={{
             pl: level * 2,
-            backgroundColor: isSelected ? 'primary.light' : 'transparent',
+            backgroundColor: isSelected ? '#a5d6a7' : 'transparent',
             '&:hover': {
               backgroundColor: 'action.hover',
             },
           }}
         >
           <ListItemButton
-            onClick={() => hasChildren ? handleToggle(node) : handleNodeClick(node)}
-            disabled={!node.is_leaf && !hasChildren}
+            onClick={() => handleNodeClick(node)}
+            selected={selectedNodeId === node.id}
           >
             <ListItemIcon sx={{ minWidth: 32 }}>
               {hasChildren ? (
-                isExpanded ? <ExpandLess /> : <ExpandMore />
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggle(node);
+                  }}
+                  sx={{ p: 0 }}
+                >
+                  {isExpanded ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
               ) : node.is_leaf ? (
                 <Description />
               ) : (

@@ -36,24 +36,46 @@ class ProcessModelVersionSerializer(serializers.ModelSerializer):
 class ProcessNodeSerializer(serializers.ModelSerializer):
     is_leaf = serializers.ReadOnlyField()
     children_count = serializers.SerializerMethodField()
+    pcf_id = serializers.SerializerMethodField()
     
     class Meta:
         model = ProcessNode
         fields = ['id', 'model_version', 'parent', 'code', 'name', 'description',
-                 'level', 'display_order', 'materialized_path', 'is_leaf', 'children_count']
+                 'level', 'display_order', 'materialized_path', 'is_leaf', 'children_count', 'pcf_id']
         read_only_fields = ['id']
     
     def get_children_count(self, obj):
         return obj.children.count()
+    
+    def get_pcf_id(self, obj):
+        """Get PCF ID from node attributes"""
+        try:
+            pcf_attr = obj.attributes.filter(key='pcf_id').first()
+            return pcf_attr.value if pcf_attr else None
+        except:
+            return None
 
 
 class ProcessNodeTreeSerializer(serializers.ModelSerializer):
     children = serializers.SerializerMethodField()
     is_leaf = serializers.ReadOnlyField()
+    pcf_id = serializers.SerializerMethodField()
+    children_count = serializers.SerializerMethodField()
     
     class Meta:
         model = ProcessNode
-        fields = ['id', 'code', 'name', 'level', 'is_leaf', 'children']
+        fields = ['id', 'code', 'name', 'description', 'level', 'is_leaf', 'children', 'children_count', 'pcf_id']
+        
+    def get_children_count(self, obj):
+        return obj.children.count()
+    
+    def get_pcf_id(self, obj):
+        """Get PCF ID from node attributes"""
+        try:
+            pcf_attr = obj.attributes.filter(key='pcf_id').first()
+            return pcf_attr.value if pcf_attr else None
+        except:
+            return None
     
     def get_children(self, obj):
         if obj.level >= 6:  # Allow up to level 5 nodes (6 would be children of level 5)

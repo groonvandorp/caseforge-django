@@ -498,6 +498,98 @@ const Composer: React.FC = () => {
                   )}
                 </Box>
 
+                {/* Node Information Panel - for non-leaf nodes */}
+                {!selectedNode.is_leaf && (
+                  <Box sx={{ mb: 3 }}>
+                    <Card variant="outlined" sx={{ backgroundColor: 'background.default' }}>
+                      <CardContent>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Description fontSize="small" />
+                          Node Information
+                        </Typography>
+                        
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          {/* Process Code */}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Process Code:
+                            </Typography>
+                            <Chip 
+                              label={selectedNode.code} 
+                              size="small" 
+                              color="primary" 
+                              variant="outlined"
+                            />
+                          </Box>
+                          
+                          {/* PCF ID */}
+                          {selectedNode.pcf_id && (
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" color="text.secondary">
+                                PCF ID:
+                              </Typography>
+                              <Chip 
+                                label={selectedNode.pcf_id} 
+                                size="small" 
+                                color="secondary" 
+                                variant="outlined"
+                              />
+                            </Box>
+                          )}
+                          
+                          {/* Level */}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Hierarchy Level:
+                            </Typography>
+                            <Chip 
+                              label={`Level ${selectedNode.level}`} 
+                              size="small" 
+                              color="info" 
+                              variant="outlined"
+                            />
+                          </Box>
+                          
+                          {/* Children Count */}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" color="text.secondary">
+                              Child Processes:
+                            </Typography>
+                            <Chip 
+                              label={`${selectedNode.children_count} children`} 
+                              size="small" 
+                              color="success" 
+                              variant="outlined"
+                            />
+                          </Box>
+                          
+                          {/* Process Name (if different from title) */}
+                          <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                              Full Process Name:
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {selectedNode.name}
+                            </Typography>
+                          </Box>
+                          
+                          {/* Description (if available and not already shown above) */}
+                          {selectedNode.description && (
+                            <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                Description:
+                              </Typography>
+                              <Typography variant="body2" sx={{ lineHeight: 1.4, color: 'text.primary' }}>
+                                {selectedNode.description}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+
                 {/* Process Details Actions - only for leaf nodes */}
                 {selectedNode.is_leaf && (
                   <Box sx={{ mb: 3 }}>

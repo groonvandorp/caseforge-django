@@ -16,10 +16,10 @@ import Composer from './pages/Composer';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#4caf50',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#66bb6a',
     },
   },
 });

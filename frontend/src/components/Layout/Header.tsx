@@ -31,14 +31,24 @@ const Header: React.FC = () => {
   };
 
   return (
-    <AppBar position="static" sx={{ mb: 3 }}>
+    <AppBar position="static" sx={{ mb: 3, backgroundColor: '#a5d6a7' }}>
       <Toolbar>
         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
+          <Box 
+            component="img" 
+            src="/logo.svg" 
+            alt="CaseForge Logo" 
+            sx={{ 
+              width: 32, 
+              height: 32, 
+              mr: 1.5 
+            }} 
+          />
+          <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', color: 'black' }}>
             CaseForge
           </Typography>
-          <Typography variant="subtitle1" sx={{ ml: 2, opacity: 0.8 }}>
-            AI-Powered Process Management
+          <Typography variant="subtitle1" sx={{ ml: 2, opacity: 0.8, color: 'black' }}>
+            Inspiration for the AI-driven Enterprise
           </Typography>
         </Box>
 

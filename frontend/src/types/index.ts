@@ -41,6 +41,7 @@ export interface ProcessNode {
   materialized_path?: string;
   is_leaf: boolean;
   children_count: number;
+  pcf_id?: string;
   children?: ProcessNode[];
 }
 
