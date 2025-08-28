@@ -136,7 +136,7 @@ class NodeDocument(models.Model):
     ]
 
     node = models.ForeignKey(ProcessNode, on_delete=models.CASCADE, related_name='documents')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='documents')
+    # User ownership removed - documents are now shared across all users
     document_type = models.CharField(max_length=50, choices=DOCUMENT_TYPES)
     title = models.CharField(max_length=255, blank=True, null=True)
     content = models.TextField()
@@ -147,7 +147,7 @@ class NodeDocument(models.Model):
     class Meta:
         db_table = 'node_document'
         indexes = [
-            models.Index(fields=['node', 'user']),
+            models.Index(fields=['node']),
             models.Index(fields=['document_type']),
             models.Index(fields=['created_at']),
         ]
@@ -158,7 +158,7 @@ class NodeDocument(models.Model):
 
 class NodeUsecaseCandidate(models.Model):
     node = models.ForeignKey(ProcessNode, on_delete=models.CASCADE, related_name='usecase_candidates')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='usecase_candidates')
+    # User ownership removed - AI use cases are now shared across all users
     candidate_uid = models.CharField(max_length=100, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
@@ -170,7 +170,7 @@ class NodeUsecaseCandidate(models.Model):
     class Meta:
         db_table = 'node_usecase_candidate'
         indexes = [
-            models.Index(fields=['node', 'user']),
+            models.Index(fields=['node']),
             models.Index(fields=['candidate_uid']),
         ]
 
@@ -180,7 +180,7 @@ class NodeUsecaseCandidate(models.Model):
 
 class UsecaseResearch(models.Model):
     document = models.ForeignKey(NodeDocument, on_delete=models.CASCADE, related_name='research_runs')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='research_runs')
+    # User ownership removed - research is now shared
     research_query = models.CharField(max_length=500, blank=True, null=True)
     summary = models.TextField(blank=True, null=True)
     web_results = models.JSONField(blank=True, null=True)
