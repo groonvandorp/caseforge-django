@@ -83,6 +83,11 @@ class ApiService {
     return response.data;
   }
 
+  async getNodeAncestors(nodeId: number): Promise<ProcessNode[]> {
+    const response = await this.apiClient.get(`/nodes/${nodeId}/ancestors/`);
+    return response.data;
+  }
+
   async getChildren(nodeId: number): Promise<ProcessNode[]> {
     const response = await this.apiClient.get(`/nodes/${nodeId}/children/`);
     return response.data.results || response.data;
@@ -380,11 +385,14 @@ class ApiService {
   async searchNodes(query: string, options?: {
     model_version_id?: number;
     model_key?: string;
+    scope?: 'processes' | 'usecases' | 'all';
+    search_type?: 'semantic' | 'text' | 'hybrid';
     level_filter?: number[];
     limit?: number;
     min_similarity?: number;
   }): Promise<{
-    results: Array<{
+    // Legacy format for backward compatibility
+    results?: Array<{
       node_id: number;
       code: string;
       name: string;
@@ -396,9 +404,39 @@ class ApiService {
       parent_name?: string;
       search_type?: string;
     }>;
-    search_type: string;
-    query: string;
-    total_results: number;
+    search_type?: string;
+    total_results?: number;
+    // New scoped format
+    query?: string;
+    scope?: string;
+    processes?: Array<{
+      id: number;
+      code: string;
+      name: string;
+      description: string;
+      level: number;
+      similarity?: number;
+      type: 'process';
+      parent_name?: string;
+      is_leaf?: boolean;
+    }>;
+    usecases?: Array<{
+      id: number;
+      candidate_uid: string;
+      title: string;
+      description: string;
+      impact_assessment?: string;
+      complexity_score?: number;
+      category?: string;
+      estimated_roi?: string;
+      risk_level?: string;
+      node_code: string;
+      node_name: string;
+      node_id: number;
+      similarity?: number;
+      type: 'usecase';
+    }>;
+    total_count?: number;
     min_similarity?: number;
   }> {
     const requestData = {

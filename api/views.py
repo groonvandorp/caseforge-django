@@ -22,6 +22,7 @@ from .serializers import (
     PortfolioSerializer, PortfolioItemSerializer, UserSettingsSerializer
 )
 from .search_service import search_service
+from .enhanced_search_service import EnhancedSearchService
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -652,16 +653,18 @@ def update_user_settings(request):
 @permission_classes([IsAuthenticated])
 def semantic_search(request):
     """
-    Semantic search for process nodes using embeddings.
+    Enhanced semantic search for processes and use cases with scope filtering.
     
     Request body:
     {
         "query": "find customer service processes",
         "model_version_id": 1,  // optional: filter by specific version ID
         "model_key": "apqc_pcf", // optional: filter by model key (alternative to model_version_id)
-        "level_filter": [1, 2], // optional: filter by process levels
-        "limit": 10,            // optional: max results (default 20)
-        "min_similarity": 0.3   // optional: min similarity threshold (default 0.1)
+        "scope": "all",         // optional: "processes", "usecases", or "all" (default: "all")
+        "search_type": "hybrid", // optional: "semantic", "text", or "hybrid" (default: "hybrid")
+        "level_filter": [1, 2], // optional: filter by process levels (processes only)
+        "limit": 20,            // optional: max results (default: 20)
+        "min_similarity": 0.1   // optional: min similarity threshold (default: 0.1)
     }
     """
     try:
@@ -672,9 +675,19 @@ def semantic_search(request):
         
         model_version_id = request.data.get('model_version_id')
         model_key = request.data.get('model_key')
+        scope = request.data.get('scope', 'all')
+        search_type = request.data.get('search_type', 'hybrid')
         level_filter = request.data.get('level_filter', [])
         limit = request.data.get('limit', 20)
         min_similarity = request.data.get('min_similarity', 0.1)
+        
+        # Validate scope parameter
+        if scope not in ['processes', 'usecases', 'all']:
+            return Response({'error': 'Invalid scope. Must be "processes", "usecases", or "all"'}, status=400)
+            
+        # Validate search_type parameter
+        if search_type not in ['semantic', 'text', 'hybrid']:
+            return Response({'error': 'Invalid search_type. Must be "semantic", "text", or "hybrid"'}, status=400)
         
         # Convert model_key to model_version_id if provided
         if model_key and not model_version_id:
@@ -698,10 +711,35 @@ def semantic_search(request):
         if limit > 100:
             limit = 100  # Prevent excessive results
         
-        logger.info(f"Semantic search request: query='{query}', limit={limit}, "
-                   f"model_version_id={model_version_id}, level_filter={level_filter}")
+        logger.info(f"Enhanced search request: query='{query}', scope='{scope}', search_type='{search_type}', "
+                   f"limit={limit}, model_version_id={model_version_id}, level_filter={level_filter}")
         
-        # Check if query looks like a process code (e.g., "1.1.1.1", "6.0", "3.2.1")
+        # Handle use case only search early
+        if scope == 'usecases':
+            try:
+                enhanced_search = EnhancedSearchService()
+                results = enhanced_search.search(
+                    query=query,
+                    model_version_id=model_version_id,
+                    scope='usecases',
+                    search_type=search_type,
+                    limit=limit
+                )
+                logger.info(f"Use case search completed: {results.get('total_count', 0)} results found")
+                return Response(results)
+            except Exception as e:
+                logger.error(f"Error in use case search: {str(e)}")
+                return Response({
+                    'query': query,
+                    'scope': scope,
+                    'search_type': 'error',
+                    'processes': [],
+                    'usecases': [],
+                    'total_count': 0,
+                    'error': 'Use case search temporarily unavailable'
+                })
+        
+        # Check if query looks like a process code (e.g., "1.1.1.1", "6.0", "3.2.1") - only for process scopes
         import re
         code_pattern = r'^\d+(\.\d+)*$'
         is_code_query = re.match(code_pattern, query.strip())
@@ -735,12 +773,22 @@ def semantic_search(request):
                         'search_type': 'exact_code'
                     }]
                     
-                    return Response({
-                        'results': results,
-                        'search_type': 'exact_code',
-                        'query': query,
-                        'total_results': 1
-                    })
+                    if scope in ['processes', 'usecases', 'all']:
+                        return Response({
+                            'query': query,
+                            'scope': scope,
+                            'search_type': 'exact_code',
+                            'processes': results if scope in ['processes', 'all'] else [],
+                            'usecases': [],
+                            'total_count': 1 if scope in ['processes', 'all'] else 0
+                        })
+                    else:
+                        return Response({
+                            'results': results,
+                            'search_type': 'exact_code',
+                            'query': query,
+                            'total_results': 1
+                        })
                 else:
                     # No exact match found, fall back to text search for codes
                     results = search_service.text_search_fallback(
@@ -750,12 +798,22 @@ def semantic_search(request):
                         limit=limit
                     )
                     
-                    return Response({
-                        'results': results,
-                        'search_type': 'code_text_search',
-                        'query': query,
-                        'total_results': len(results)
-                    })
+                    if scope in ['processes', 'usecases', 'all']:
+                        return Response({
+                            'query': query,
+                            'scope': scope,
+                            'search_type': 'code_text_search',
+                            'processes': results if scope in ['processes', 'all'] else [],
+                            'usecases': [],
+                            'total_count': len(results) if scope in ['processes', 'all'] else 0
+                        })
+                    else:
+                        return Response({
+                            'results': results,
+                            'search_type': 'code_text_search',
+                            'query': query,
+                            'total_results': len(results)
+                        })
                     
             except Exception as e:
                 logger.error(f"Error in code search: {e}")
@@ -777,12 +835,22 @@ def semantic_search(request):
                     limit=limit
                 )
                 
-                return Response({
-                    'results': results,
-                    'search_type': 'text_fallback',
-                    'query': query,
-                    'total_results': len(results)
-                })
+                if scope in ['processes', 'usecases', 'all']:
+                    return Response({
+                        'query': query,
+                        'scope': scope,
+                        'search_type': 'text_fallback',
+                        'processes': results if scope in ['processes', 'all'] else [],
+                        'usecases': [],
+                        'total_count': len(results) if scope in ['processes', 'all'] else 0
+                    })
+                else:
+                    return Response({
+                        'results': results,
+                        'search_type': 'text_fallback',
+                        'query': query,
+                        'total_results': len(results)
+                    })
             
             # Perform semantic search with half the limit to leave room for text results
             semantic_limit = max(1, limit // 2)
@@ -836,17 +904,61 @@ def semantic_search(request):
                         
             logger.info(f"Added {text_added_count} unique text results to {len(semantic_results)} semantic results")
             
-            search_type = 'hybrid' if len(text_results) > 0 and any(r.get('search_type') == 'text_match' for r in combined_results) else 'semantic'
+            search_type_result = 'hybrid' if len(text_results) > 0 and any(r.get('search_type') == 'text_match' for r in combined_results) else 'semantic'
             
-            return Response({
-                'results': combined_results[:limit],
-                'search_type': search_type,
-                'query': query,
-                'total_results': len(combined_results[:limit]),
-                'min_similarity': min_similarity,
-                'semantic_count': len(semantic_results),
-                'text_count': len([r for r in combined_results if r.get('search_type') == 'text_match'])
-            })
+            # For scoped search, check if we need to also search use cases
+            if scope == 'all' and search_type != 'text':
+                try:
+                    # Use enhanced search for use cases
+                    enhanced_search = EnhancedSearchService()
+                    usecase_results = enhanced_search.search(
+                        query=query,
+                        model_version_id=model_version_id,
+                        scope='usecases',
+                        search_type=search_type,
+                        limit=limit
+                    )
+                    
+                    return Response({
+                        'query': query,
+                        'scope': scope,
+                        'search_type': search_type_result,
+                        'processes': combined_results[:limit],
+                        'usecases': usecase_results.get('usecases', []),
+                        'total_count': len(combined_results[:limit]) + len(usecase_results.get('usecases', []))
+                    })
+                except Exception as e:
+                    logger.error(f"Error searching use cases: {str(e)}")
+                    # Fall back to processes only
+                    return Response({
+                        'query': query,
+                        'scope': scope,
+                        'search_type': search_type_result,
+                        'processes': combined_results[:limit],
+                        'usecases': [],
+                        'total_count': len(combined_results[:limit])
+                    })
+            elif scope == 'processes':
+                # Return in new format for processes scope
+                return Response({
+                    'query': query,
+                    'scope': scope,
+                    'search_type': search_type_result,
+                    'processes': combined_results[:limit],
+                    'usecases': [],
+                    'total_count': len(combined_results[:limit])
+                })
+            else:
+                # Default backward compatibility
+                return Response({
+                    'results': combined_results[:limit],
+                    'search_type': search_type_result,
+                    'query': query,
+                    'total_results': len(combined_results[:limit]),
+                    'min_similarity': min_similarity,
+                    'semantic_count': len(semantic_results),
+                    'text_count': len([r for r in combined_results if r.get('search_type') == 'text_match'])
+                })
         
         except ValueError as ve:
             # OpenAI service not available, fallback to text search
@@ -859,13 +971,24 @@ def semantic_search(request):
                 limit=limit
             )
             
-            return Response({
-                'results': results,
-                'search_type': 'text_fallback',
-                'query': query,
-                'total_results': len(results),
-                'reason': 'OpenAI service unavailable'
-            })
+            if scope in ['processes', 'usecases', 'all']:
+                return Response({
+                    'query': query,
+                    'scope': scope,
+                    'search_type': 'text_fallback',
+                    'processes': results if scope in ['processes', 'all'] else [],
+                    'usecases': [],
+                    'total_count': len(results) if scope in ['processes', 'all'] else 0,
+                    'reason': 'OpenAI service unavailable'
+                })
+            else:
+                return Response({
+                    'results': results,
+                    'search_type': 'text_fallback',
+                    'query': query,
+                    'total_results': len(results),
+                    'reason': 'OpenAI service unavailable'
+                })
         
         except Exception as e:
             logger.error(f"Error in semantic search: {str(e)}")
