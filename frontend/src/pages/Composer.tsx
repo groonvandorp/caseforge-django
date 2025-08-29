@@ -23,6 +23,7 @@ import {
   Folder,
   Add,
   FolderOpen,
+  Download,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import { useSearchParams } from 'react-router-dom';
@@ -626,6 +627,26 @@ const Composer: React.FC = () => {
     }
   };
 
+  const handleDownloadProcessDetails = async () => {
+    if (!processDetails) return;
+    
+    try {
+      await apiService.downloadProcessDetailsDocx(processDetails.id);
+    } catch (error: any) {
+      console.error('Failed to download process details:', error);
+      alert('Failed to download process details. Please try again.');
+    }
+  };
+
+  const handleDownloadUsecase = async (candidate: NodeUsecaseCandidate) => {
+    try {
+      await apiService.downloadUsecaseCandidateDocx(candidate.id);
+    } catch (error: any) {
+      console.error('Failed to download use case:', error);
+      alert('Failed to download use case. Please try again.');
+    }
+  };
+
   const handleDeleteCandidate = async (candidate: NodeUsecaseCandidate) => {
     if (window.confirm('Are you sure you want to delete this use case candidate?')) {
       try {
@@ -841,7 +862,7 @@ const Composer: React.FC = () => {
                         {loadingDetails ? 'Generating...' : 'Generate Process Details'}
                       </Button>
                     ) : (
-                      // Show both regenerate and delete buttons if process details exist
+                      // Show regenerate, download, and delete buttons if process details exist
                       <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
                         <Button
                           variant="contained"
@@ -852,16 +873,22 @@ const Composer: React.FC = () => {
                         >
                           {loadingDetails ? 'Regenerating...' : 'Regenerate Details'}
                         </Button>
-                        <Button
-                          variant="outlined"
+                        <IconButton
+                          onClick={handleDownloadProcessDetails}
+                          disabled={loadingDetails}
+                          sx={{ color: 'success.main' }}
+                          title="Download DOCX"
+                        >
+                          <Download />
+                        </IconButton>
+                        <IconButton
                           color="error"
-                          startIcon={<Delete />}
                           onClick={handleDeleteProcessDetails}
                           disabled={loadingDetails}
-                          sx={{ minWidth: '120px' }}
+                          title="Delete Process Details"
                         >
-                          Delete
-                        </Button>
+                          <Delete />
+                        </IconButton>
                       </Box>
                     )}
                     
@@ -1070,14 +1097,22 @@ const Composer: React.FC = () => {
                                 >
                                   <FolderOpen />
                                 </IconButton>
-                                <Button
+                                <IconButton
                                   size="small"
-                                  variant="outlined"
+                                  onClick={() => handleDownloadUsecase(uc)}
+                                  sx={{ color: 'success.main' }}
+                                  title="Download DOCX"
+                                >
+                                  <Download />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
                                   color="error"
                                   onClick={() => handleDeleteCandidate(uc)}
+                                  title="Delete Use Case"
                                 >
-                                  Delete
-                                </Button>
+                                  <Delete />
+                                </IconButton>
                               </Box>
                             </Box>
                             

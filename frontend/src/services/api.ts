@@ -474,6 +474,69 @@ class ApiService {
     return response.data;
   }
 
+  // Download methods
+  async downloadProcessDetailsDocx(documentId: number): Promise<void> {
+    try {
+      const response = await this.apiClient.get(`/documents/${documentId}/download_docx/`, {
+        responseType: 'blob'
+      });
+      
+      // Extract filename from Content-Disposition header or create default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'process_details.docx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading process details DOCX:', error);
+      throw error;
+    }
+  }
+  
+  async downloadUsecaseCandidateDocx(candidateId: number): Promise<void> {
+    try {
+      const response = await this.apiClient.get(`/usecases/${candidateId}/download_docx/`, {
+        responseType: 'blob'
+      });
+      
+      // Extract filename from Content-Disposition header or create default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'usecase_candidate.docx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading use case candidate DOCX:', error);
+      throw error;
+    }
+  }
+
   // Expose axios instance for direct API calls
   get api() {
     return this.apiClient;

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -462,6 +463,32 @@ class NodeDocumentViewSet(ModelViewSet):
             
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def download_docx(self, request, pk=None):
+        """Download document as DOCX file"""
+        try:
+            document = self.get_object()
+            
+            # Generate DOCX content
+            from .services import DocumentService
+            docx_content = DocumentService.export_to_docx(document)
+            
+            # Create filename: PDD-<process-id>-<processname>.docx
+            process_name = document.node.name.replace(' ', '-').replace('/', '-').replace('\\', '-')
+            filename = f"PDD-{document.node.code}-{process_name}.docx"
+            
+            # Create response
+            response = HttpResponse(
+                docx_content,
+                content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            return response
+            
+        except Exception as e:
+            return Response({'error': f'Failed to generate DOCX: {str(e)}'}, status=500)
 
 
 class NodeUsecaseCandidateViewSet(ModelViewSet):
@@ -483,6 +510,31 @@ class NodeUsecaseCandidateViewSet(ModelViewSet):
         candidates = self.get_queryset().filter(node_id=node_id)
         serializer = self.get_serializer(candidates, many=True)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def download_docx(self, request, pk=None):
+        """Download use case candidate as DOCX file"""
+        try:
+            candidate = self.get_object()
+            
+            # Generate DOCX content
+            from .services import DocumentService
+            docx_content = DocumentService.export_usecase_candidate_to_docx(candidate)
+            
+            # Create filename: AUC-<process-id>-<candidate-uid>.docx
+            filename = f"AUC-{candidate.node.code}-{candidate.candidate_uid}.docx"
+            
+            # Create response
+            response = HttpResponse(
+                docx_content,
+                content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            return response
+            
+        except Exception as e:
+            return Response({'error': f'Failed to generate DOCX: {str(e)}'}, status=500)
     
     @action(detail=True, methods=['post'])
     def generate_specification(self, request, pk=None):
