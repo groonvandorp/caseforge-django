@@ -287,6 +287,32 @@ class ApiService {
     return response.data;
   }
 
+  async updatePortfolio(id: number, name: string, description?: string): Promise<Portfolio> {
+    const response: AxiosResponse<Portfolio> = await this.apiClient.put(`/portfolios/${id}/`, { name, description });
+    return response.data;
+  }
+
+  async deletePortfolio(id: number): Promise<void> {
+    await this.apiClient.delete(`/portfolios/${id}/`);
+  }
+
+  async getPortfolioItems(id: number): Promise<any[]> {
+    const response = await this.apiClient.get(`/portfolios/${id}/items/`);
+    return response.data.results || response.data;
+  }
+
+  async addToPortfolio(portfolioId: number, candidateUid: string): Promise<void> {
+    await this.apiClient.post(`/portfolios/${portfolioId}/add_item/`, { 
+      candidate_uid: candidateUid 
+    });
+  }
+
+  async removeFromPortfolio(portfolioId: number, candidateUid: string): Promise<void> {
+    await this.apiClient.post(`/portfolios/${portfolioId}/remove_item/`, { 
+      candidate_uid: candidateUid 
+    });
+  }
+
   // Dashboard
   async getDashboardSpecs(modelKey: string): Promise<NodeDocument[]> {
     const response = await this.apiClient.get('/dashboard/specs/', {

@@ -12,16 +12,22 @@ import {
   LinearProgress,
   Alert,
   Divider,
+  Menu,
+  MenuItem,
+  IconButton,
 } from '@mui/material';
 import {
   AutoAwesome,
   Delete,
   Description,
+  Folder,
+  Add,
+  FolderOpen,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import { useSearchParams } from 'react-router-dom';
 import SimpleProcessTree from '../components/Process/SimpleProcessTree';
-import { ProcessNode, NodeDocument, NodeUsecaseCandidate } from '../types';
+import { ProcessNode, NodeDocument, NodeUsecaseCandidate, Portfolio } from '../types';
 import { apiService } from '../services/api';
 import { useAppState } from '../contexts/AppStateContext';
 
@@ -29,23 +35,128 @@ import { useAppState } from '../contexts/AppStateContext';
 const preprocessTextForDisplay = (text: string): string => {
   if (!text) return '';
   
-  // Convert numbered workflows like "(1)" to proper markdown lists
+  // First, protect abbreviations from being split
   let processedText = text
-    // Convert (1), (2), (3) patterns to numbered lists
-    .replace(/\(\d+\)\s*/g, (match) => {
-      const number = match.match(/\((\d+)\)/)?.[1];
-      return `\n${number}. `;
+    // Temporarily replace common abbreviations to protect them
+    .replace(/\be\.g\./gi, '__EG__')
+    .replace(/\bi\.e\./gi, '__IE__')
+    .replace(/\betc\./gi, '__ETC__')
+    .replace(/\bvs\./gi, '__VS__')
+    .replace(/\bDr\./g, '__DR__')
+    .replace(/\bMr\./g, '__MR__')
+    .replace(/\bMrs\./g, '__MRS__')
+    .replace(/\bMs\./g, '__MS__')
+    .replace(/\bProf\./g, '__PROF__')
+    .replace(/\bInc\./g, '__INC__')
+    .replace(/\bLtd\./g, '__LTD__')
+    .replace(/\bCorp\./g, '__CORP__')
+    
+    // Handle various enumeration patterns
+    // First, handle ALL (1), (2), (3) patterns consistently throughout the text
+    // This ensures continuity of numbered lists even with text between items
+    .replace(/\((\d+)\)\s*/g, (match, num, offset, string) => {
+      // Check if this is at the start of a line or after punctuation
+      const before = string.substring(Math.max(0, offset - 2), offset);
+      const after = string.substring(offset + match.length, offset + match.length + 20);
+      
+      // If it's inline (like "see point (1) above"), keep it as is
+      if (before.match(/\b(point|item|step|section|part|example)\s*$/i) || 
+          after.match(/^\s*(above|below|in|of|from)/)) {
+        return match;
+      }
+      
+      // If it's at the start of content or after clear breaks, make it a list item
+      if (offset === 0 || before.match(/[\n.!?:]\s*$/)) {
+        return `\n${num}. `;
+      }
+      
+      return match;
     })
-    // Convert "Key features:" style headers to markdown headers
-    .replace(/^([A-Z][^:]*:)(?=\s)/gm, '**$1**')
-    // Convert "Workflow:" to markdown header
-    .replace(/^(Workflow:)/gm, '\n### $1')
-    // Convert "Outcomes:" to markdown header  
-    .replace(/^(Outcomes:)/gm, '\n### $1')
-    // Add line breaks before sentences that start with capital letters after periods for better paragraph separation
-    .replace(/\.\s+([A-Z][^.]*(?:connects|integrates|ensures|produces|provides|enables|supports|includes|features|offers))/g, '.\n\n$1')
-    // Clean up multiple line breaks
+    
+    // Pattern: numbered lists with dots that are clearly separate items
+    .replace(/([.!?])\s+(\d+)\.\s+([A-Z])/g, '$1\n$2. $3')
+    .replace(/^\s*(\d+)\.\s+([A-Z])/gm, '\n$1. $2')
+    
+    // Pattern: lettered lists only at start of lines
+    .replace(/^\s*([a-z])[.)]\s+/gim, '\n- ')
+    
+    // Pattern: roman numerals only at start of lines
+    .replace(/^\s*([ivxIVX]+)[.)]\s+/gm, '\n- ')
+    
+    // Add line breaks before bullet points that start items
+    .replace(/([.!?])\s+([-•*])\s+([A-Z])/g, '$1\n$2 $3')
+    .replace(/^\s*([-•*])\s+/gm, '\n- ')
+    
+    // Add line breaks before clear section headers (with variations)
+    .replace(/([.!?])\s+(Key features?|Benefits?|Requirements?|Steps?|Process(?:es)?|Workflow|Expected outcomes?|Outcomes?|Impact|Results?|Technologies|Components?|Implementation|Examples?|Use cases?|Objectives?)(?:\s+include[sd]?)?:/gi, '$1\n\n$2:')
+    
+    // Convert section headers to markdown headers
+    // Special handling for headers that might be followed immediately by numbered lists
+    .replace(/(Step-by-step\s+workflow|Workflow|Steps?|Process(?:es)?):?\s*\(1\)\s*([^.])/gim, '\n### $1\n\n1. $2')
+    .replace(/^(Key features?|Benefits?|Requirements?|Step-by-step\s+workflow|Workflow|Steps?|Process(?:es)?|Expected outcomes?|Outcomes?|Impact|Results?|Technologies|Components?|Implementation|Examples?|Use cases?|Objectives?)(?:\s+include[sd]?)?:\s*/gim, (match, header) => {
+      return `\n### ${header}\n\n`;
+    })
+    
+    // Handle other potential headers that end with colon
+    .replace(/^([A-Z][^:.\n]{3,}(?:\s+\w+){0,3}):(?=\s*\w)/gm, (match, header) => {
+      // Check if this looks like a section header (not already processed)
+      const headerLower = header.toLowerCase();
+      if (headerLower.includes('feature') || headerLower.includes('outcome') || 
+          headerLower.includes('benefit') || headerLower.includes('include') ||
+          headerLower.includes('provide') || headerLower.includes('support') ||
+          headerLower.includes('enable') || headerLower.includes('capabilit')) {
+        return `\n### ${header}\n\n`;
+      }
+      // Otherwise make it bold
+      return `**${match}**`;
+    })
+    
+    // Make other important labels bold (but not if they're already headers)
+    .replace(/^(?!#{1,3})([A-Z][^:.\n]{2,}:)(?=\s)/gm, '**$1**')
+    
+    // Add line breaks only for clear paragraph boundaries (multiple sentences)
+    .replace(/([.!?])\s+([A-Z])/g, (match, p1, p2, offset, string) => {
+      // Look at more context to determine if this is really a new paragraph
+      const beforeMatch = string.substring(Math.max(0, offset - 50), offset);
+      const afterMatch = string.substring(offset, Math.min(string.length, offset + 50));
+      
+      // Check if we're in the middle of a list of items in parentheses (likely examples)
+      if (beforeMatch.includes('(') && !beforeMatch.includes(')')) {
+        return match; // Keep inline
+      }
+      
+      // Check if the sentence before was very short (likely a list item)
+      const lastSentence = beforeMatch.split(/[.!?]/).pop() || '';
+      if (lastSentence.length < 30) {
+        return match; // Keep inline for short items
+      }
+      
+      // Check if this looks like a genuine new paragraph
+      if (afterMatch.length > 40 && !afterMatch.startsWith(' (')) {
+        return `${p1}\n${p2}`;
+      }
+      
+      return match;
+    })
+    
+    // Restore protected abbreviations
+    .replace(/__EG__/g, 'e.g.')
+    .replace(/__IE__/g, 'i.e.')
+    .replace(/__ETC__/g, 'etc.')
+    .replace(/__VS__/g, 'vs.')
+    .replace(/__DR__/g, 'Dr.')
+    .replace(/__MR__/g, 'Mr.')
+    .replace(/__MRS__/g, 'Mrs.')
+    .replace(/__MS__/g, 'Ms.')
+    .replace(/__PROF__/g, 'Prof.')
+    .replace(/__INC__/g, 'Inc.')
+    .replace(/__LTD__/g, 'Ltd.')
+    .replace(/__CORP__/g, 'Corp.')
+    
+    // Clean up formatting - reduce excessive line breaks
     .replace(/\n{3,}/g, '\n\n')
+    .replace(/(#{1,3}[^\n]+)\n(?!\n)/g, '$1\n')
+    .replace(/^\n+/, '')
     .trim();
   
   return processedText;
@@ -70,6 +181,12 @@ const Composer: React.FC = () => {
   } | null>(null);
   const [loadingUsecases, setLoadingUsecases] = useState(false);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
+  
+  // Portfolio state
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [portfolioMembership, setPortfolioMembership] = useState<Record<number, number[]>>({});
+  const [portfolioMenuAnchor, setPortfolioMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedUsecaseForPortfolio, setSelectedUsecaseForPortfolio] = useState<NodeUsecaseCandidate | null>(null);
 
 
   // Function to expand tree path to show a specific node
@@ -133,6 +250,16 @@ const Composer: React.FC = () => {
             const process = await apiService.getNodeByCode(processCode, selectedModel!);
             console.log('Composer: Successfully loaded process from code:', process);
             setSelectedNode(process);
+            
+            // Expand tree path to show the selected node
+            await expandPathToNode(process.id);
+            
+            // If there's a usecaseId, set it for highlighting
+            if (usecaseId) {
+              console.log('Composer: Setting highlighted usecase ID:', usecaseId);
+              setHighlightedUsecaseId(parseInt(usecaseId));
+            }
+            
             // Clear the URL parameter after loading
             setSearchParams({});
           } catch (error) {
@@ -206,6 +333,102 @@ const Composer: React.FC = () => {
       // Fall back to the basic node data
       setSelectedNode(node);
     }
+  };
+
+  // Portfolio functions
+  const loadPortfolios = useCallback(async () => {
+    try {
+      const portfoliosData = await apiService.getPortfolios();
+      setPortfolios(portfoliosData);
+    } catch (error) {
+      console.error('Failed to load portfolios:', error);
+    }
+  }, []);
+
+  const loadPortfolioMembership = useCallback(async (usecaseIds: number[]) => {
+    if (usecaseIds.length === 0) {
+      setPortfolioMembership({});
+      return;
+    }
+
+    try {
+      const membership: Record<number, number[]> = {};
+      
+      // Load all portfolio items for all portfolios
+      for (const portfolio of portfolios) {
+        const items = await apiService.getPortfolioItems(portfolio.id);
+        items.forEach(item => {
+          if (usecaseIds.includes(item.usecase_candidate)) {
+            if (!membership[item.usecase_candidate]) {
+              membership[item.usecase_candidate] = [];
+            }
+            membership[item.usecase_candidate].push(portfolio.id);
+          }
+        });
+      }
+      
+      setPortfolioMembership(membership);
+    } catch (error) {
+      console.error('Failed to load portfolio membership:', error);
+    }
+  }, [portfolios]);
+
+  const handleAddToPortfolio = async (portfolioId: number, candidateUid: string, usecaseId: number) => {
+    try {
+      await apiService.addToPortfolio(portfolioId, candidateUid);
+      // Update membership state
+      setPortfolioMembership(prev => ({
+        ...prev,
+        [usecaseId]: [...(prev[usecaseId] || []), portfolioId]
+      }));
+    } catch (error: any) {
+      console.error('Failed to add to portfolio:', error);
+      alert(error.response?.data?.error || 'Failed to add to portfolio');
+    }
+  };
+
+  const handleRemoveFromPortfolio = async (portfolioId: number, candidateUid: string, usecaseId: number) => {
+    try {
+      await apiService.removeFromPortfolio(portfolioId, candidateUid);
+      // Update membership state
+      setPortfolioMembership(prev => ({
+        ...prev,
+        [usecaseId]: (prev[usecaseId] || []).filter(pid => pid !== portfolioId)
+      }));
+    } catch (error: any) {
+      console.error('Failed to remove from portfolio:', error);
+      alert(error.response?.data?.error || 'Failed to remove from portfolio');
+    }
+  };
+
+  const getPortfoliosByUsecase = (usecaseId: number): Portfolio[] => {
+    const portfolioIds = portfolioMembership[usecaseId] || [];
+    return portfolios.filter(p => portfolioIds.includes(p.id));
+  };
+
+  const handlePortfolioMenuOpen = (event: React.MouseEvent<HTMLElement>, usecase: NodeUsecaseCandidate) => {
+    setPortfolioMenuAnchor(event.currentTarget);
+    setSelectedUsecaseForPortfolio(usecase);
+  };
+
+  const handlePortfolioMenuClose = () => {
+    setPortfolioMenuAnchor(null);
+    setSelectedUsecaseForPortfolio(null);
+  };
+
+  const handlePortfolioAction = async (portfolioId: number) => {
+    if (!selectedUsecaseForPortfolio) return;
+    
+    const usecasePortfolios = portfolioMembership[selectedUsecaseForPortfolio.id] || [];
+    const isInPortfolio = usecasePortfolios.includes(portfolioId);
+    
+    if (isInPortfolio) {
+      await handleRemoveFromPortfolio(portfolioId, selectedUsecaseForPortfolio.candidate_uid, selectedUsecaseForPortfolio.id);
+    } else {
+      await handleAddToPortfolio(portfolioId, selectedUsecaseForPortfolio.candidate_uid, selectedUsecaseForPortfolio.id);
+    }
+    
+    handlePortfolioMenuClose();
   };
 
   const handleGenerateDetails = async () => {
@@ -424,6 +647,18 @@ const Composer: React.FC = () => {
     );
   };
 
+  // Load portfolios on component mount
+  useEffect(() => {
+    loadPortfolios();
+  }, [loadPortfolios]);
+
+  // Load portfolio membership when use cases or portfolios change
+  useEffect(() => {
+    if (usecaseCandidates.length > 0 && portfolios.length > 0) {
+      const usecaseIds = usecaseCandidates.map(uc => uc.id);
+      loadPortfolioMembership(usecaseIds);
+    }
+  }, [usecaseCandidates, portfolios, loadPortfolioMembership]);
 
   return (
     <Container maxWidth="xl">
@@ -802,6 +1037,18 @@ const Composer: React.FC = () => {
                                       color="secondary"
                                     />
                                   )}
+                                  {/* Portfolio membership chips */}
+                                  {getPortfoliosByUsecase(uc.id).map(portfolio => (
+                                    <Chip
+                                      key={portfolio.id}
+                                      icon={<Folder />}
+                                      label={portfolio.name}
+                                      size="small"
+                                      color="info"
+                                      variant="outlined"
+                                      sx={{ backgroundColor: 'rgba(29, 78, 216, 0.04)' }}
+                                    />
+                                  ))}
                                 </Box>
                               </Box>
                               
@@ -815,6 +1062,14 @@ const Composer: React.FC = () => {
                                 >
                                   {hasSpec ? 'Spec Generated' : 'Generate Spec'}
                                 </Button>
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => handlePortfolioMenuOpen(e, uc)}
+                                  sx={{ color: 'primary.main' }}
+                                  title="Add to Portfolio"
+                                >
+                                  <FolderOpen />
+                                </IconButton>
                                 <Button
                                   size="small"
                                   variant="outlined"
@@ -834,7 +1089,7 @@ const Composer: React.FC = () => {
                                 lineHeight: 1.7, 
                                 mb: 1.2, 
                                 color: 'text.secondary',
-                                textAlign: 'justify'
+                                textAlign: 'left'
                               },
                               '& ul, & ol': { 
                                 fontSize: '0.875rem', 
@@ -884,7 +1139,7 @@ const Composer: React.FC = () => {
                                 '& p': { mb: 0 }
                               }
                             }}>
-                              <ReactMarkdown>
+                              <ReactMarkdown key={`description-${uc.id}-${selectedNode?.id}`}>
                                 {preprocessTextForDisplay(uc.description)}
                               </ReactMarkdown>
                             </Box>
@@ -901,7 +1156,7 @@ const Composer: React.FC = () => {
                                     lineHeight: 1.7, 
                                     mb: 1.2, 
                                     color: 'text.secondary',
-                                    textAlign: 'justify'
+                                    textAlign: 'left'
                                   },
                                   '& ul, & ol': { 
                                     fontSize: '0.875rem', 
@@ -951,7 +1206,7 @@ const Composer: React.FC = () => {
                                     '& p': { mb: 0 }
                                   }
                                 }}>
-                                  <ReactMarkdown>
+                                  <ReactMarkdown key={`impact-${uc.id}-${selectedNode?.id}`}>
                                     {preprocessTextForDisplay(uc.impact_assessment)}
                                   </ReactMarkdown>
                                 </Box>
@@ -1007,6 +1262,52 @@ const Composer: React.FC = () => {
         </Box>
 
       </Box>
+
+      {/* Portfolio Menu */}
+      <Menu
+        anchorEl={portfolioMenuAnchor}
+        open={Boolean(portfolioMenuAnchor)}
+        onClose={handlePortfolioMenuClose}
+      >
+        {portfolios.length === 0 ? (
+          <MenuItem disabled>No portfolios available</MenuItem>
+        ) : (
+          portfolios.map(portfolio => {
+            const isInPortfolio = selectedUsecaseForPortfolio 
+              ? (portfolioMembership[selectedUsecaseForPortfolio.id] || []).includes(portfolio.id)
+              : false;
+            return (
+              <MenuItem
+                key={portfolio.id}
+                onClick={() => handlePortfolioAction(portfolio.id)}
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1,
+                  ...(isInPortfolio && {
+                    backgroundColor: 'rgba(29, 78, 216, 0.08)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(29, 78, 216, 0.12)',
+                    }
+                  })
+                }}
+              >
+                {isInPortfolio ? <FolderOpen /> : <Folder />}
+                {portfolio.name}
+                {isInPortfolio && (
+                  <Chip 
+                    label="Added" 
+                    size="small" 
+                    color="primary" 
+                    variant="filled"
+                    sx={{ ml: 1, fontSize: '0.7rem' }}
+                  />
+                )}
+              </MenuItem>
+            );
+          })
+        )}
+      </Menu>
     </Container>
   );
 };

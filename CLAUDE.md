@@ -1,3 +1,79 @@
+# CaseForge Build Advisor Implementation Notes
+
+## Build Advisor Implementation Status (2025-08-28)
+
+### ✅ PHASE 2 COMPLETE: Build Advisor API & Basic UI
+**Status**: Fully operational Build Advisor with API and initial React component integration
+
+#### Backend Implementation Complete
+- **API Layer**: 8 new serializers, 5 ViewSets, 2 function-based views in `/api/serializers.py` and `/api/views.py`
+- **URL Routing**: All Build Advisor endpoints registered in `/api/urls.py`
+- **Django Admin**: Complete admin interface for technology inventory management in `/core/admin.py`
+- **Technology Matching**: Keyword-based algorithm in `get_build_advice()` function
+
+#### Frontend Implementation Complete  
+- **BuildAdvisorPanel Component**: Rich UI component in `/frontend/src/components/BuildAdvisor/BuildAdvisorPanel.tsx`
+- **Composer Integration**: Build Advisor panel integrated into each use case card in Composer view
+- **Material-UI Components**: Comprehensive design with accordions, chips, progress indicators
+
+#### Current Data State
+- **Technologies**: 7 (GPT-4 Turbo, Azure services, Apache Airflow, Databricks, Pinecone)
+- **Vendors**: 16 (Microsoft, OpenAI, Apache, Google, etc.)
+- **Categories**: 9 (AI/ML Platforms, NLP & Language, Process Automation, etc.)
+- **Capabilities**: 20 (Text Extraction, Machine Learning, Anomaly Detection, etc.)
+- **Use Case → Technology Recommendations**: 4 (minimal dataset)
+
+### 🚧 NEXT PHASE: Full Build Advisor Workspace
+
+#### User's Vision for Enhanced UX
+**New Approach**: Dedicated full-page Build Advisor instead of embedded panel
+- **Left Side**: Complete use case information (description, impact, complexity, metadata)
+- **Right Side**: Technology selection workspace with category-based clicking
+- **Navigation**: "Build Solution" button on use case cards in Composer → `/build-advisor/:usecaseId`
+- **Solution Building**: Accumulate selected technologies into coherent solution stack
+- **Persistence**: Save technology stack with reference to AI use case
+
+#### Implementation Requirements
+1. Create full-page Build Advisor view component
+2. Add navigation from Composer use case cards  
+3. Implement category-based technology selection interface
+4. Add solution stack persistence and management
+5. Populate more technology data and recommendations
+
+### Technical Architecture
+
+#### API Endpoints
+- `GET /api/build-advice/{use_case_id}/` - Get recommendations for use case
+- `GET /api/technology-landscape/` - Get all technologies with filtering
+- `GET /api/technology-categories/` - Get technology categories
+- `GET /api/vendors/` - Get vendor information
+- `GET /api/technologies/` - Get technologies with search/filter
+- `GET /api/capabilities/` - Get technology capabilities
+
+#### Key Models
+- **Technology**: Core technology entities (tools, services, platforms)
+- **TechnologyCategory**: Hierarchical categorization system
+- **Vendor**: Technology providers with partnership status
+- **TechnologyCapability**: What technologies can do
+- **UseCaseTechnologyRecommendation**: AI-generated recommendations with scoring
+- **ImplementationPattern**: Reusable solution architectures
+- **OrganizationTechnologyInventory**: Track existing technology assets
+
+### Authentication & User Management
+
+#### Current User Setup
+- **User**: gruhno (gruhno@gmail.com) with password 'wollw'
+- **Model Access**: Full access to all 5 process models
+- **Server Status**: Django (port 8000) and React (port 3000) running
+- **Login**: Working authentication with JWT tokens
+
+### Data Population Strategy
+- **populate_initial_technologies.py**: Script exists but only partially executed
+- **Technology Matching Algorithm**: Capability-keyword based matching implemented
+- **Auto-Population Sources**: GitHub API, Cloud Provider APIs, Package registries documented
+
+---
+
 # APQC PCF Model Management Notes
 
 ## Critical Issues to Remember

@@ -570,44 +570,57 @@ class PortfolioViewSet(ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def add_item(self, request, pk=None):
-        portfolio = self.get_object()
-        candidate_uid = request.data.get('candidate_uid')
-        
-        if not candidate_uid:
-            return Response({'error': 'candidate_uid required'}, status=400)
-        
         try:
-            candidate = NodeUsecaseCandidate.objects.get(
-                candidate_uid=candidate_uid,
-                user=request.user
-            )
+            portfolio = self.get_object()
+            candidate_uid = request.data.get('candidate_uid')
             
-            item, created = PortfolioItem.objects.get_or_create(
-                portfolio=portfolio,
-                usecase_candidate=candidate
-            )
+            if not candidate_uid:
+                return Response({'error': 'candidate_uid required'}, status=400)
             
-            if created:
-                return Response({'message': 'Item added to portfolio'}, status=201)
-            else:
-                return Response({'message': 'Item already in portfolio'}, status=200)
+            try:
+                candidate = NodeUsecaseCandidate.objects.get(
+                    candidate_uid=candidate_uid
+                )
                 
-        except NodeUsecaseCandidate.DoesNotExist:
-            return Response({'error': 'Use case candidate not found'}, status=404)
+                item, created = PortfolioItem.objects.get_or_create(
+                    portfolio=portfolio,
+                    usecase_candidate=candidate
+                )
+                
+                if created:
+                    return Response({'message': 'Item added to portfolio'}, status=201)
+                else:
+                    return Response({'message': 'Item already in portfolio'}, status=200)
+                    
+            except NodeUsecaseCandidate.DoesNotExist:
+                return Response({'error': 'Use case candidate not found'}, status=404)
+                
+        except Exception as e:
+            logger.error(f"Error in add_item: {str(e)}")
+            return Response({'error': f'Failed to add item to portfolio: {str(e)}'}, status=500)
     
-    @action(detail=True, methods=['delete'], url_path='items/(?P<candidate_uid>[^/.]+)')
-    def remove_item(self, request, pk=None, candidate_uid=None):
-        portfolio = self.get_object()
-        
+    @action(detail=True, methods=['post'])
+    def remove_item(self, request, pk=None):
         try:
-            item = PortfolioItem.objects.get(
-                portfolio=portfolio,
-                usecase_candidate__candidate_uid=candidate_uid
-            )
-            item.delete()
-            return Response({'message': 'Item removed from portfolio'})
-        except PortfolioItem.DoesNotExist:
-            return Response({'error': 'Item not found in portfolio'}, status=404)
+            portfolio = self.get_object()
+            candidate_uid = request.data.get('candidate_uid')
+            
+            if not candidate_uid:
+                return Response({'error': 'candidate_uid required'}, status=400)
+            
+            try:
+                item = PortfolioItem.objects.get(
+                    portfolio=portfolio,
+                    usecase_candidate__candidate_uid=candidate_uid
+                )
+                item.delete()
+                return Response({'message': 'Item removed from portfolio'})
+            except PortfolioItem.DoesNotExist:
+                return Response({'error': 'Item not found in portfolio'}, status=404)
+                
+        except Exception as e:
+            logger.error(f"Error in remove_item: {str(e)}")
+            return Response({'error': f'Failed to remove item from portfolio: {str(e)}'}, status=500)
 
 
 @api_view(['GET'])

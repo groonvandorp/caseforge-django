@@ -12,6 +12,7 @@ import Login from './components/Auth/Login';
 import Signup from './components/Auth/Signup';
 import Dashboard from './pages/Dashboard';
 import Composer from './pages/Composer';
+import PortfolioManager from './pages/PortfolioManager';
 
 const theme = createTheme({
   palette: {
@@ -74,11 +75,11 @@ const AppContent: React.FC = () => {
           }
         />
         <Route
-          path="/build-advisor"
+          path="/portfolios"
           element={
             <ProtectedRoute>
               <TabNavigation />
-              <div>Build Advisor (Coming Soon)</div>
+              <PortfolioManager />
             </ProtectedRoute>
           }
         />

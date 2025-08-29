@@ -8,28 +8,80 @@ The CaseForge Batch Processing System is a comprehensive AI-powered content gene
 
 ### Core Components
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Batch         │    │    OpenAI        │    │   Result        │
-│   Generator     ├───►│   Batch API      ├───►│   Processor     │
-│   Scripts       │    │                  │    │                 │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                                                │
-         ▼                                                ▼
-┌─────────────────┐                            ┌─────────────────┐
-│   JSONL Input   │                            │   Database      │
-│   Files         │                            │   Records       │
-└─────────────────┘                            └─────────────────┘
+```mermaid
+graph TB
+    A[Batch Generator Scripts] --> B[JSONL Input Files]
+    B --> C[OpenAI Batch API]
+    C --> D[Result Processor]
+    D --> E[Database Records]
+    
+    F[Monitor Scripts] --> C
+    G[Retry Scripts] --> B
+    
+    subgraph "File Storage"
+        H[batch_process_details/]
+        I[batch_usecase_candidates/]
+    end
+    
+    B --> H
+    B --> I
+    D --> H
+    D --> I
 ```
 
 ### Data Flow
 
+```mermaid
+flowchart LR
+    A[Process Nodes] --> B[Hierarchical Context]
+    B --> C[JSONL Batch Files]
+    C --> D[OpenAI Batch API]
+    D --> E[Poll for Completion]
+    E --> F{Batch Status}
+    F -->|Complete| G[Download Results]
+    F -->|Failed/In Progress| E
+    G --> H[Parse JSON]
+    H --> I[Store in Database]
+    I --> J[Success/Error Statistics]
+    
+    K[Failed Nodes] --> L[Generate Retry Batch]
+    L --> C
+```
+
+#### Process Steps:
 1. **Input Preparation**: Process nodes → Hierarchical context → JSONL batch files
 2. **Batch Submission**: Upload to OpenAI → Create batch job → Poll for completion
 3. **Result Processing**: Download results → Parse JSON → Store in database
 4. **Error Handling**: Identify failures → Generate retry batches → Re-process
 
 ## System Components
+
+```mermaid
+graph TD
+    A[Batch Processing System] --> B[Generation Scripts]
+    A --> C[Monitoring Scripts]
+    A --> D[Error Handling Scripts]
+    A --> E[Configuration]
+    
+    B --> B1[batch_generate_process_details.py]
+    B --> B2[batch_generate_usecase_candidates.py]
+    B --> B3[batch_generate_usecase_specs.py]
+    B --> B4[batch_generate_embeddings.py]
+    B --> B5[batch_generate_usecase_embeddings.py]
+    B --> B6[batch_generate_embeddings_with_details.py]
+    
+    C --> C1[monitor_batch.py]
+    C --> C2[monitor_usecase_batch.py]
+    
+    D --> D1[identify_failed_nodes.py]
+    D --> D2[retry_failed_usecase_nodes.py]
+    
+    E --> E1[AdminSettings Model]
+    E --> E2[OpenAI API Configuration]
+    E --> E3[Token Limits]
+```
+
+The batch processing system consists of six main generation scripts and supporting components:
 
 ### 1. Process Details Generation
 
@@ -277,6 +329,34 @@ django-port/
 
 ### Standard Workflow
 
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant G as Generator Scripts
+    participant O as OpenAI Batch API
+    participant M as Monitor Scripts
+    participant D as Database
+    
+    U->>G: Start batch_generate_process_details.py
+    G->>G: Prepare JSONL files
+    G->>O: Submit batch
+    O->>G: Return batch ID
+    
+    loop Monitor Progress
+        U->>M: Run monitor_batch.py
+        M->>O: Check batch status
+        O->>M: Return status/progress
+        M->>U: Display progress
+    end
+    
+    O->>M: Batch complete
+    M->>O: Download results
+    M->>D: Store in database
+    M->>U: Report completion
+    
+    Note over U,D: Process repeats for use case candidates
+```
+
 #### 1. Process Details Generation
 ```bash
 # Start batch processing
@@ -380,6 +460,19 @@ grep -i "error\|failed" batch_usecase_candidates/batch_output_*.jsonl
 ## Performance Metrics and Analytics
 
 ### Current System Performance
+
+```mermaid
+pie title Processing Success Rates
+    "Process Details Success" : 97
+    "Process Details Failed" : 3
+```
+
+```mermaid
+bar title Cost Efficiency Comparison
+    "Process Details ($/doc)" : 0.008
+    "Use Cases ($/node)" : 0.012
+    "Standard API Equivalent" : 0.024
+```
 
 #### Process Details Generation
 - **Total Nodes**: 1,545 leaf nodes
@@ -497,9 +590,133 @@ The CaseForge Batch Processing System represents a sophisticated, scalable solut
 
 The system's modular design allows for easy extension and customization, while its comprehensive audit trail ensures compliance and reproducibility. Future enhancements will focus on expanding capabilities while maintaining the current high standards of reliability and cost-effectiveness.
 
+## Content Formatting and Display Processing
+
+### Overview
+
+The batch processing system generates content that must be properly formatted for display in the frontend. This section documents the formatting challenges, solutions implemented, and recommendations for improvement.
+
+### Formatting Challenges Identified (August 2025)
+
+During frontend integration, several content formatting issues were discovered:
+
+#### 1. Use Case Candidates Formatting Issues
+- **Root Cause**: Prompt requests JSON format, losing markdown structure
+- **Symptoms**: 
+  - Missing line breaks between paragraphs
+  - Enumerated lists showing as `(1), (2), (3)` instead of proper numbered lists
+  - Section headers not properly formatted
+  - Text justification causing stretched appearance
+  - Inline examples (e.g., "e.g., Jira") being broken across lines
+
+#### 2. Process Details Formatting (Better)
+- **Status**: Generally well-formatted
+- **Reason**: Prompt explicitly requests "detailed markdown document"
+- **Structure**: Proper `## Section` headers, bullet points with `-`
+
+### Frontend Preprocessing Solution
+
+```mermaid
+flowchart TD
+    A[Raw Batch Content] --> B[Abbreviation Protection]
+    B --> C[Enumeration Conversion]
+    C --> D[Section Header Detection]
+    D --> E[Smart Paragraph Breaking]
+    E --> F[List Formatting]
+    F --> G[Clean Markdown Output]
+    
+    subgraph "Processing Steps"
+        H["(1), (2), (3) → 1. 2. 3."]
+        I["e.g., i.e. → Protected"]
+        J["Headers → ### Format"]
+        K["Context-aware \\n insertion"]
+    end
+    
+    B -.-> I
+    C -.-> H
+    D -.-> J
+    E -.-> K
+```
+
+To handle existing poorly formatted content, a comprehensive `preprocessTextForDisplay()` function was implemented in the Composer component:
+
+#### Key Features:
+1. **Abbreviation Protection**: Protects "e.g.", "i.e.", "Inc.", etc. from line breaking
+2. **Enumeration Conversion**: Converts `(1), (2), (3)` to `1. 2. 3.` numbered lists
+3. **Section Header Detection**: Converts headers to proper markdown `### Headers`
+4. **Smart Paragraph Breaking**: Context-aware paragraph separation
+5. **List Formatting**: Consistent bullet point and numbered list formatting
+
+#### Implementation Location:
+```typescript
+// File: frontend/src/pages/Composer.tsx
+const preprocessTextForDisplay = (text: string): string => {
+  // Complex preprocessing logic to fix formatting issues
+}
+```
+
+### Recommended Long-Term Solution
+
+#### Update Use Case Candidates Prompt
+The use case candidates batch prompt should be updated to match the process details approach:
+
+**Current Issues**:
+```javascript
+// Current prompt requests JSON format at the end
+Format as JSON array with this structure:
+```
+
+**Recommended Changes**:
+1. **Request Clean Markdown**: "Provide detailed markdown content covering:"
+2. **Specify Formatting Rules**:
+   - Use proper numbered lists: `1. 2. 3.` instead of `(1) (2) (3)`
+   - One blank line between paragraphs
+   - Section headers as `### Header`
+   - Consistent bullet points with `-`
+3. **Remove JSON Format Request**: Store content directly as markdown
+4. **Add Formatting Instructions**:
+   ```
+   Use clean markdown formatting:
+   - Numbered lists as "1. ", "2. ", "3. "
+   - Section headers as "### Header"  
+   - Single blank line between paragraphs
+   - Bullet points as "- Item"
+   - No parenthetical numbering like (1), (2)
+   ```
+
+#### Benefits of Prompt Update:
+- ✅ Eliminates need for complex frontend preprocessing
+- ✅ Consistent formatting from source
+- ✅ Better maintainability
+- ✅ Cleaner architecture
+- ✅ Reduced frontend complexity
+
+### Display Formatting Improvements Implemented
+
+#### Text Alignment
+- Changed from `textAlign: 'justify'` to `textAlign: 'left'`
+- Eliminates stretched text appearance with awkward word spacing
+
+#### ReactMarkdown Integration
+- Enhanced key generation for proper re-rendering
+- Context-aware keys: `key={description-${uc.id}-${selectedNode?.id}}`
+- Ensures markdown renders correctly when navigating between views
+
+#### Paragraph Spacing
+- Optimized line break handling to reduce excessive spacing
+- Single newlines instead of double for better visual flow
+- Maintained proper section separation
+
+### Future Considerations
+
+1. **Batch Prompt Updates**: Priority should be updating the use case candidates prompt
+2. **Content Migration**: Consider regenerating existing poorly formatted content
+3. **Quality Assurance**: Implement formatting validation in batch processing
+4. **Performance**: Simplified preprocessing after prompt improvements
+
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: August 27, 2025  
+**Document Version**: 1.1  
+**Last Updated**: August 29, 2025  
 **Author**: CaseForge Development Team  
 **Review Schedule**: Monthly
