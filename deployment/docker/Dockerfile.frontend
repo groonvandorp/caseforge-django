@@ -1,22 +1,44 @@
-# Frontend Dockerfile
-FROM node:18-alpine
+# Frontend Dockerfile - Multi-stage build for security
+# Stage 1: Build stage
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci
 
 # Copy application code
 COPY . .
 
-# Build the React app
+# Security audit to ensure no vulnerabilities
+RUN npm audit --audit-level=high
+
+# Build the React app (this applies security overrides)
 RUN npm run build
 
-# Install serve to run the production build
+# Stage 2: Production stage
+FROM node:18-alpine AS production
+
+WORKDIR /app
+
+# Install serve globally for production
 RUN npm install -g serve
+
+# Copy only the built application from builder stage
+COPY --from=builder /app/build ./build
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S react -u 1001
+
+# Change ownership of the app directory
+RUN chown -R react:nodejs /app
+
+# Switch to non-root user
+USER react
 
 # Expose port
 EXPOSE 3000

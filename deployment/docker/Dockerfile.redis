@@ -1,0 +1,63 @@
+# Redis Dockerfile with security hardening
+FROM redis:7.4-bookworm
+
+# Update packages for security patches
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install dependencies for building gosu from source with Go 1.24.4+
+RUN apt-get update && \
+    apt-get install -y git build-essential wget ca-certificates gnupg && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Go 1.24.4+ (latest stable)
+RUN set -eux; \
+    dpkgArch="$(dpkg --print-architecture)"; \
+    case "${dpkgArch##*-}" in \
+        amd64) goArch='linux-amd64' ;; \
+        armhf) goArch='linux-armv6l' ;; \
+        arm64) goArch='linux-arm64' ;; \
+        i386) goArch='linux-386' ;; \
+        *) echo >&2 "error: unsupported architecture '$dpkgArch'"; exit 1 ;; \
+    esac; \
+    wget -O go.tgz "https://golang.org/dl/go1.24.4.$goArch.tar.gz"; \
+    tar -C /usr/local -xzf go.tgz; \
+    rm go.tgz; \
+    export PATH="/usr/local/go/bin:$PATH"; \
+    go version
+
+# Build gosu from source with Go 1.24.4+
+RUN set -eux; \
+    export PATH="/usr/local/go/bin:$PATH"; \
+    export GOPATH="/tmp/go"; \
+    mkdir -p "$GOPATH"; \
+    cd "$GOPATH"; \
+    git clone https://github.com/tianon/gosu.git; \
+    cd gosu; \
+    go build -v -ldflags '-d -s -w' -a -tags netgo -installsuffix netgo -o gosu .; \
+    cp gosu /usr/local/bin/gosu; \
+    chmod +x /usr/local/bin/gosu; \
+    \
+# verify that the binary works and shows Go 1.24.4+
+    gosu --version; \
+    gosu nobody true; \
+    \
+# clean up build dependencies and Go installation
+    rm -rf /usr/local/go "$GOPATH"; \
+    apt-get purge -y --auto-remove git build-essential wget gnupg
+
+# Create a non-root user for Redis (redis user already exists in base image)
+# Ensure redis user owns the data directory
+RUN mkdir -p /data && \
+    chown -R redis:redis /data
+
+# Use non-root user
+USER redis
+
+# Expose Redis port
+EXPOSE 6379
+
+# Use a custom redis.conf for additional security
+CMD ["redis-server", "--protected-mode", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--requirepass", "redis_secure_password_change_in_production", "--bind", "0.0.0.0"]

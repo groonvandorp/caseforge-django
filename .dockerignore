@@ -1,0 +1,40 @@
+# Large directories to exclude from Docker build context
+database_backups/
+db.sqlite3
+venv/
+node_modules/
+frontend/node_modules/
+embeddings_batch*/
+batch_*/
+
+# Git and development files
+.git/
+.gitignore
+*.md
+README.md
+CLAUDE.md
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# Logs and temporary files
+*.log
+logs/
+*.tmp
+.DS_Store
+
+# Development and backup files
+.env.backup
+*.backup
+.env.example
+
+# Build artifacts
+frontend/build/
+staticfiles/
+static/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo

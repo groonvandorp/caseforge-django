@@ -1,0 +1,55 @@
+# PostgreSQL Dockerfile with updated gosu to fix Go 1.18.2 vulnerability and latest PostgreSQL 15.x
+FROM postgres:15-bookworm
+
+# Update packages for security patches
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install dependencies for building gosu from source with Go 1.24.4+
+RUN apt-get update && \
+    apt-get install -y git build-essential wget ca-certificates gnupg && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Go 1.24.4+ (latest stable)
+RUN set -eux; \
+    dpkgArch="$(dpkg --print-architecture)"; \
+    case "${dpkgArch##*-}" in \
+        amd64) goArch='linux-amd64' ;; \
+        armhf) goArch='linux-armv6l' ;; \
+        arm64) goArch='linux-arm64' ;; \
+        i386) goArch='linux-386' ;; \
+        *) echo >&2 "error: unsupported architecture '$dpkgArch'"; exit 1 ;; \
+    esac; \
+    wget -O go.tgz "https://golang.org/dl/go1.24.4.$goArch.tar.gz"; \
+    tar -C /usr/local -xzf go.tgz; \
+    rm go.tgz; \
+    export PATH="/usr/local/go/bin:$PATH"; \
+    go version
+
+# Build gosu from source with Go 1.24.4+
+RUN set -eux; \
+    export PATH="/usr/local/go/bin:$PATH"; \
+    export GOPATH="/tmp/go"; \
+    mkdir -p "$GOPATH"; \
+    cd "$GOPATH"; \
+    git clone https://github.com/tianon/gosu.git; \
+    cd gosu; \
+    go build -v -ldflags '-d -s -w' -a -tags netgo -installsuffix netgo -o gosu .; \
+    cp gosu /usr/local/bin/gosu; \
+    chmod +x /usr/local/bin/gosu; \
+    \
+# verify that the binary works and shows Go 1.24.4+
+    gosu --version; \
+    gosu nobody true; \
+    \
+# clean up build dependencies and Go installation
+    rm -rf /usr/local/go "$GOPATH"; \
+    apt-get purge -y --auto-remove git build-essential wget gnupg
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Use the standard PostgreSQL entrypoint
+CMD ["postgres"]

@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade setuptools to fix CVE (65.5.1 → 78.1.1+)
+RUN pip install --no-cache-dir --upgrade setuptools>=78.1.1
+
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
