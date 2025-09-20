@@ -132,11 +132,12 @@ class PortfolioSerializer(serializers.ModelSerializer):
 class PortfolioItemSerializer(serializers.ModelSerializer):
     usecase_title = serializers.CharField(source='usecase_candidate.title', read_only=True)
     node_code = serializers.CharField(source='usecase_candidate.node.code', read_only=True)
+    candidate_uid = serializers.CharField(source='usecase_candidate.candidate_uid', read_only=True)
     
     class Meta:
         model = PortfolioItem
         fields = ['id', 'portfolio', 'usecase_candidate', 'usecase_title', 
-                 'node_code', 'added_at']
+                 'node_code', 'candidate_uid', 'added_at']
         read_only_fields = ['id', 'added_at']
 
 

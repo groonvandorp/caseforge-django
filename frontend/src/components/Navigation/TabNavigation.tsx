@@ -5,7 +5,7 @@ import {
   Dashboard,
   Architecture,
   Visibility,
-  Build,
+  Folder,
   Terminal,
 } from '@mui/icons-material';
 
@@ -17,7 +17,7 @@ const TabNavigation: React.FC = () => {
     { label: 'Dashboard', path: '/dashboard', icon: <Dashboard /> },
     { label: 'Composer', path: '/composer', icon: <Architecture /> },
     { label: 'Viewer', path: '/viewer', icon: <Visibility /> },
-    { label: 'Build Advisor', path: '/build-advisor', icon: <Build /> },
+    { label: 'Portfolios', path: '/portfolios', icon: <Folder /> },
     { label: 'Console', path: '/console', icon: <Terminal /> },
   ];
 

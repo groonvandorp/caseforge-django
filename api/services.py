@@ -579,18 +579,198 @@ class DocumentService:
     
     @staticmethod
     def export_to_docx(document: NodeDocument) -> bytes:
-        """Export document content to DOCX format"""
+        """Export document content to DOCX format with enhanced markdown parsing"""
         from docx import Document
+        from docx.shared import Inches
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
         from io import BytesIO
+        import re
         
         doc = Document()
-        doc.add_heading(document.title or f"{document.node.code} - {document.document_type}", 0)
         
-        # Add content (assuming markdown)
-        paragraphs = document.content.split('\n\n')
-        for paragraph in paragraphs:
-            if paragraph.strip():
-                doc.add_paragraph(paragraph.strip())
+        # Add document title
+        title = document.title or f"{document.node.code} - {document.document_type.replace('_', ' ').title()}"
+        doc.add_heading(title, 0)
+        
+        # Add metadata paragraph
+        meta_p = doc.add_paragraph()
+        meta_p.add_run("Process Node: ").bold = True
+        meta_p.add_run(f"{document.node.code} - {document.node.name}")
+        meta_p.add_run("\nDocument Type: ").bold = True
+        meta_p.add_run(document.document_type.replace('_', ' ').title())
+        meta_p.add_run(f"\nGenerated: {document.created_at.strftime('%Y-%m-%d %H:%M')}")
+        
+        doc.add_paragraph()  # Add spacing
+        
+        # Parse markdown content
+        content = document.content or ""
+        lines = content.split('\n')
+        
+        current_paragraph = []
+        in_code_block = False
+        
+        for line in lines:
+            line_stripped = line.strip()
+            
+            # Handle code blocks
+            if line_stripped.startswith('```'):
+                if current_paragraph:
+                    doc.add_paragraph('\n'.join(current_paragraph))
+                    current_paragraph = []
+                in_code_block = not in_code_block
+                continue
+                
+            if in_code_block:
+                # Add code line with monospace formatting
+                p = doc.add_paragraph()
+                run = p.add_run(line)
+                run.font.name = 'Courier New'
+                continue
+            
+            # Handle headers
+            if line_stripped.startswith('###'):
+                if current_paragraph:
+                    doc.add_paragraph('\n'.join(current_paragraph))
+                    current_paragraph = []
+                header_text = line_stripped[3:].strip()
+                doc.add_heading(header_text, level=3)
+                continue
+            elif line_stripped.startswith('##'):
+                if current_paragraph:
+                    doc.add_paragraph('\n'.join(current_paragraph))
+                    current_paragraph = []
+                header_text = line_stripped[2:].strip()
+                doc.add_heading(header_text, level=2)
+                continue
+            elif line_stripped.startswith('#'):
+                if current_paragraph:
+                    doc.add_paragraph('\n'.join(current_paragraph))
+                    current_paragraph = []
+                header_text = line_stripped[1:].strip()
+                doc.add_heading(header_text, level=1)
+                continue
+            
+            # Handle bullet points
+            if line_stripped.startswith('- ') or line_stripped.startswith('* '):
+                if current_paragraph:
+                    doc.add_paragraph('\n'.join(current_paragraph))
+                    current_paragraph = []
+                bullet_text = line_stripped[2:].strip()
+                p = doc.add_paragraph(bullet_text, style='List Bullet')
+                continue
+            
+            # Handle numbered lists
+            if re.match(r'^\d+\.\s+', line_stripped):
+                if current_paragraph:
+                    doc.add_paragraph('\n'.join(current_paragraph))
+                    current_paragraph = []
+                numbered_text = re.sub(r'^\d+\.\s+', '', line_stripped)
+                p = doc.add_paragraph(numbered_text, style='List Number')
+                continue
+            
+            # Handle empty lines (paragraph breaks)
+            if not line_stripped:
+                if current_paragraph:
+                    doc.add_paragraph('\n'.join(current_paragraph))
+                    current_paragraph = []
+                continue
+            
+            # Regular text line
+            current_paragraph.append(line)
+        
+        # Add any remaining paragraph
+        if current_paragraph:
+            doc.add_paragraph('\n'.join(current_paragraph))
+        
+        # Save to bytes
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        return buffer.getvalue()
+    
+    @staticmethod
+    def export_usecase_candidate_to_docx(candidate: 'NodeUsecaseCandidate') -> bytes:
+        """Export use case candidate to DOCX format"""
+        from docx import Document
+        from docx.shared import Inches
+        from io import BytesIO
+        import json
+        
+        doc = Document()
+        
+        # Add title
+        doc.add_heading(f"AI Use Case: {candidate.title}", 0)
+        
+        # Add metadata
+        meta_p = doc.add_paragraph()
+        meta_p.add_run("Process Node: ").bold = True
+        meta_p.add_run(f"{candidate.node.code} - {candidate.node.name}")
+        meta_p.add_run("\nCandidate ID: ").bold = True
+        meta_p.add_run(candidate.candidate_uid)
+        meta_p.add_run("\nComplexity: ").bold = True
+        # Map complexity score to display text
+        complexity_display = "Unknown"
+        if candidate.complexity_score == 1:
+            complexity_display = "Low"
+        elif candidate.complexity_score == 2:
+            complexity_display = "Medium"
+        elif candidate.complexity_score == 3:
+            complexity_display = "High"
+        meta_p.add_run(complexity_display)
+        meta_p.add_run(f"\nGenerated: {candidate.created_at.strftime('%Y-%m-%d %H:%M')}")
+        
+        doc.add_paragraph()  # Add spacing
+        
+        # Add description
+        doc.add_heading("Description", level=2)
+        doc.add_paragraph(candidate.description)
+        
+        # Add impact assessment
+        if candidate.impact_assessment:
+            doc.add_heading("Impact Assessment", level=2)
+            doc.add_paragraph(candidate.impact_assessment)
+        
+        # Add metadata from JSON
+        if candidate.meta_json:
+            try:
+                meta_data = candidate.meta_json if isinstance(candidate.meta_json, dict) else json.loads(candidate.meta_json)
+                
+                # Technology Requirements
+                if 'technology_requirements' in meta_data:
+                    doc.add_heading("Technology Requirements", level=2)
+                    doc.add_paragraph(meta_data['technology_requirements'])
+                
+                # Success Metrics
+                if 'success_metrics' in meta_data:
+                    doc.add_heading("Success Metrics", level=2)
+                    doc.add_paragraph(meta_data['success_metrics'])
+                
+                # Implementation Timeline
+                if 'implementation_timeline' in meta_data:
+                    doc.add_heading("Implementation Timeline", level=2)
+                    doc.add_paragraph(meta_data['implementation_timeline'])
+                
+                # Complexity Details
+                if 'complexity_details' in meta_data:
+                    doc.add_heading("Complexity Details", level=2)
+                    doc.add_paragraph(meta_data['complexity_details'])
+                
+                # Category and Risk
+                additional_info = []
+                if 'category' in meta_data:
+                    additional_info.append(f"Category: {meta_data['category'].title()}")
+                if 'estimated_roi' in meta_data:
+                    additional_info.append(f"Estimated ROI: {meta_data['estimated_roi']}")
+                if 'risk_level' in meta_data:
+                    additional_info.append(f"Risk Level: {meta_data['risk_level']}")
+                
+                if additional_info:
+                    doc.add_heading("Additional Information", level=2)
+                    for info in additional_info:
+                        p = doc.add_paragraph(info, style='List Bullet')
+                        
+            except (json.JSONDecodeError, KeyError):
+                pass  # Skip if JSON parsing fails
         
         # Save to bytes
         buffer = BytesIO()

@@ -1,3 +1,189 @@
+# CaseForge Development Session Notes
+
+**Project**: Onwell CaseForge - Process Model-Driven AI Use Case Generation System
+**Last Updated**: September 20, 2025
+
+## 🎯 Current Project Status
+
+### ✅ **PRODUCTION-READY DOCKER DEPLOYMENT COMPLETE (2025-09-20)**
+
+#### 🐳 Complete Docker Containerization
+**Status**: Fully operational 5-container production deployment
+
+- **True Docker Deployment**: All services containerized (PostgreSQL, Redis, Django, Celery, React)
+- **One-Command Deployment**: `./deploy_docker.sh` for instant setup on any machine
+- **Complete Data Migration**: 266MB export with 56,894 objects including all users and portfolios
+- **Production Optimized**: Health checks, volumes, networking, production React build
+- **Verified Operational**: 42+ minutes uptime, all services accessible
+
+#### 📦 Deployment Package Infrastructure
+**Status**: Enterprise-grade deployment solution
+
+- **Complete Data Export**: All users (including gruhno), portfolios, and process models
+- **Automated Scripts**: Self-contained deployment with verification
+- **Comprehensive Documentation**: Setup, management, troubleshooting guides
+- **Portable Architecture**: Copy-paste deployment to any Docker-enabled machine
+
+### ✅ **MAJOR SYSTEMS COMPLETE & ORGANIZED**
+
+#### 📊 Batch Processing Systems (2025-09-20)
+**Status**: Fully organized and documented AI content generation pipeline
+
+- **Waste Analysis by Type**: Individual TIMWOOD+ analysis (12 waste types per process)
+- **Embedding Generation**: Semantic search support for waste documents
+- **Process Details**: AI-generated process descriptions
+- **Use Case Generation**: AI-driven use case recommendations
+- **Comprehensive Organization**: All batch scripts properly organized in subfolders
+
+#### 🗄️ Database Backup Systems (2025-09-20)
+**Status**: Enterprise-grade backup and recovery infrastructure
+
+- **Unified Backup System**: Auto-detects environment (dev/prod)
+- **Multiple Formats**: SQLite, PostgreSQL, JSON fixtures, media files
+- **Auto-Restore Scripts**: Generated per backup for easy recovery
+- **Comprehensive Documentation**: Complete backup and disaster recovery guide
+
+#### 🚀 Deployment Infrastructure (2025-09-20)
+**Status**: Production-ready containerized deployment
+
+- **Docker Containers**: Development and production configurations
+- **Security Hardening**: Non-root users, security headers, health checks
+- **Scalability**: Multi-worker setup with Nginx, Redis, Celery
+- **Automation**: Deploy scripts with validation and backup integration
+
+#### 🔗 MCP Server Integration (2025-09-20)
+**Status**: Claude Desktop integration complete
+
+- **Model Context Protocol**: Natural language interface to CaseForge data
+- **9 Powerful Tools**: Process search, use case discovery, technology recommendations
+- **Authentication**: JWT-based Django backend integration
+- **Comprehensive Documentation**: Setup, configuration, and usage examples
+
+## 📁 **ORGANIZED PROJECT STRUCTURE**
+
+### Codebase Organization (2025-09-20)
+**Achievement**: Complete codebase reorganization for maintainability
+
+```
+caseforge/
+├── 📄 DEVELOPMENT_GUIDE.md          # 🎯 Comprehensive development guide
+├── 📄 CLAUDE.md                     # This development session notes
+├── 📁 docs/                         # 📚 Documentation hub
+├── 📁 batch_*/                      # 🤖 AI batch processing (organized)
+├── 📁 db_management/                # 🗄️ Database operations (organized)
+├── 📁 deployment/                   # 🚀 Infrastructure (organized)
+└── 📁 database_backups/             # 💾 Backup system (organized)
+```
+
+### Key Achievements
+
+#### ✅ **Batch Processing Organization**
+- **7 specialized folders**: Each batch system in dedicated directory
+- **Import path fixes**: All scripts work from subdirectories
+- **Consistent structure**: batch → monitor → test pattern
+- **Clear separation**: Current vs legacy systems identified
+
+#### ✅ **Database Management Organization**
+- **4 specialized folders**: imports, migrations, data_sync, utilities
+- **Logical grouping**: Related scripts grouped by function
+- **Clean root directory**: Only core Django files remain
+
+#### ✅ **Deployment Organization**
+- **Docker configurations**: Dev and production Dockerfiles
+- **Environment management**: Template and production configs
+- **Automation scripts**: Deploy, backup, monitoring utilities
+- **Documentation**: Complete deployment and backup guides
+
+## 🎯 **DOCUMENTATION CREATED**
+
+### Comprehensive Guides (2025-09-20)
+- **[📖 DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)** - Complete development guide (NEW)
+- **[📊 Batch Processing Systems](docs/systems/batch-processing.md)** - AI processing documentation (NEW)
+- **[🗄️ Database Backup Systems](docs/systems/database-backup.md)** - Backup/recovery guide (NEW)
+- **[🚀 Deployment Guide](deployment/README.md)** - Infrastructure guide (UPDATED)
+- **[📚 Documentation Hub](docs/README.md)** - Navigation and overview (NEW)
+
+### Documentation Features
+- **Comprehensive Coverage**: All major systems documented
+- **Practical Examples**: Copy-paste command examples
+- **Troubleshooting**: Common issues and solutions
+- **Visual Structure**: Clear hierarchy and navigation
+- **Cross-References**: Linked documentation ecosystem
+
+### ✅ Build Advisor Implementation Status (2025-08-28)
+
+### ✅ PHASE 2 COMPLETE: Build Advisor API & Basic UI
+**Status**: Fully operational Build Advisor with API and initial React component integration
+
+#### Backend Implementation Complete
+- **API Layer**: 8 new serializers, 5 ViewSets, 2 function-based views in `/api/serializers.py` and `/api/views.py`
+- **URL Routing**: All Build Advisor endpoints registered in `/api/urls.py`
+- **Django Admin**: Complete admin interface for technology inventory management in `/core/admin.py`
+- **Technology Matching**: Keyword-based algorithm in `get_build_advice()` function
+
+#### Frontend Implementation Complete  
+- **BuildAdvisorPanel Component**: Rich UI component in `/frontend/src/components/BuildAdvisor/BuildAdvisorPanel.tsx`
+- **Composer Integration**: Build Advisor panel integrated into each use case card in Composer view
+- **Material-UI Components**: Comprehensive design with accordions, chips, progress indicators
+
+#### Current Data State
+- **Technologies**: 7 (GPT-4 Turbo, Azure services, Apache Airflow, Databricks, Pinecone)
+- **Vendors**: 16 (Microsoft, OpenAI, Apache, Google, etc.)
+- **Categories**: 9 (AI/ML Platforms, NLP & Language, Process Automation, etc.)
+- **Capabilities**: 20 (Text Extraction, Machine Learning, Anomaly Detection, etc.)
+- **Use Case → Technology Recommendations**: 4 (minimal dataset)
+
+### 🚧 NEXT PHASE: Full Build Advisor Workspace
+
+#### User's Vision for Enhanced UX
+**New Approach**: Dedicated full-page Build Advisor instead of embedded panel
+- **Left Side**: Complete use case information (description, impact, complexity, metadata)
+- **Right Side**: Technology selection workspace with category-based clicking
+- **Navigation**: "Build Solution" button on use case cards in Composer → `/build-advisor/:usecaseId`
+- **Solution Building**: Accumulate selected technologies into coherent solution stack
+- **Persistence**: Save technology stack with reference to AI use case
+
+#### Implementation Requirements
+1. Create full-page Build Advisor view component
+2. Add navigation from Composer use case cards  
+3. Implement category-based technology selection interface
+4. Add solution stack persistence and management
+5. Populate more technology data and recommendations
+
+### Technical Architecture
+
+#### API Endpoints
+- `GET /api/build-advice/{use_case_id}/` - Get recommendations for use case
+- `GET /api/technology-landscape/` - Get all technologies with filtering
+- `GET /api/technology-categories/` - Get technology categories
+- `GET /api/vendors/` - Get vendor information
+- `GET /api/technologies/` - Get technologies with search/filter
+- `GET /api/capabilities/` - Get technology capabilities
+
+#### Key Models
+- **Technology**: Core technology entities (tools, services, platforms)
+- **TechnologyCategory**: Hierarchical categorization system
+- **Vendor**: Technology providers with partnership status
+- **TechnologyCapability**: What technologies can do
+- **UseCaseTechnologyRecommendation**: AI-generated recommendations with scoring
+- **ImplementationPattern**: Reusable solution architectures
+- **OrganizationTechnologyInventory**: Track existing technology assets
+
+### Authentication & User Management
+
+#### Current User Setup
+- **User**: gruhno (gruhno@gmail.com) with password 'wollw'
+- **Model Access**: Full access to all 5 process models
+- **Server Status**: Django (port 8000) and React (port 3000) running
+- **Login**: Working authentication with JWT tokens
+
+### Data Population Strategy
+- **populate_initial_technologies.py**: Script exists but only partially executed
+- **Technology Matching Algorithm**: Capability-keyword based matching implemented
+- **Auto-Population Sources**: GitHub API, Cloud Provider APIs, Package registries documented
+
+---
+
 # APQC PCF Model Management Notes
 
 ## Critical Issues to Remember
